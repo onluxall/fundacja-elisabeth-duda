@@ -88,7 +88,7 @@ export function SectionHead({ title, tag, more, moreLabel }) {
 
 export function EventsTabs({ active, lang }) {
   const t = tFor(lang);
-  const tabs = [['events', t('all_events')], ['books', t('books')], ['shows', t('shows')], ['meetings', t('meetings')], ['partners', t('partners')]];
+  const tabs = [['events', t('all_events')], ['shows', t('shows')], ['meetings', t('meetings')]];
   return (
     <nav className="tabs" aria-label={t('events')}>
       {tabs.map(([k, label]) => <a key={k} href={url(k, lang)} aria-current={k === active ? 'page' : undefined}>{label}</a>)}

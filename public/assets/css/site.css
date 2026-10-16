@@ -21,9 +21,10 @@
   --radius: 4px;
   --shadow: 0 1px 0 rgba(0,0,0,.04), 0 10px 24px -12px rgba(21,22,28,.35);
   --sticker-shadow: 4px 4px 0 var(--ink);
-  --f-display: "Bebas Neue", "Oswald", Impact, sans-serif;
-  --f-spray: "Rubik Spray Paint", "Bebas Neue", Impact, sans-serif;
-  --f-hand: "Caveat Brush", "Comic Sans MS", cursive;
+  --f-display: "Cormorant Garamond", Garamond, "Times New Roman", Georgia, serif;
+  --f-spray: "Cormorant Garamond", Garamond, Georgia, serif;   /* accent words: set in italic below */
+  --f-hand: "Cormorant Garamond", Garamond, Georgia, serif;    /* captions + footer tagline: italic below */
+  --f-label: "Inter", system-ui, -apple-system, "Segoe UI", sans-serif; /* menu, buttons, small caps labels */
   --f-body: "Source Serif 4", Georgia, serif;
   --f-ui: "Inter", system-ui, -apple-system, "Segoe UI", sans-serif;
   --wrap: 1180px;
@@ -421,3 +422,83 @@ a.pasteup:hover { transform: rotate(0deg) scale(1.02); }
   .site-head, .site-foot, .hero-wall, .btn { display: none !important; }
   body { background: #fff; }
 }
+
+
+/* =====================================================================
+   Typography v2 (Oct 2026) — quieter, more elegant type for a cultural
+   foundation. Headings: Cormorant Garamond. Accents and the footer
+   tagline: Cormorant italic. Small UI labels: Inter, spaced capitals.
+   Layout, colours and paste-up details are unchanged.
+   ===================================================================== */
+h1, h2, h3, .h-xl, .h-lg, .h-md { font-weight: 500; letter-spacing: 0; line-height: 1.04; }
+.h-xl { font-size: clamp(2.6rem, 6.2vw, 4.6rem); }
+.h-lg { font-size: clamp(2rem, 4vw, 3rem); }
+.hero-title { font-weight: 500; line-height: .95; letter-spacing: -.01em; font-size: clamp(3.2rem, 9vw, 7.2rem); }
+.cover-title, .bank-name, .partner-name, .datestamp, .datestamp b { font-weight: 500; letter-spacing: 0; }
+.cover-title { line-height: 1; }
+
+/* accent words that used the spray-paint face */
+.spray, .qr-num, .qr-stamp, .hero-title .w2 { font-family: var(--f-spray); font-style: italic; font-weight: 500; letter-spacing: 0; }
+.tag-wall .spray { font-size: clamp(6rem, 18vw, 11rem); }
+
+/* captions + footer tagline ("Création par excellence") that used the brush face */
+.hero-poster-cap, .foot-tag { font-family: var(--f-hand); font-style: italic; font-weight: 500; }
+.foot-tag { font-size: 1.85rem; line-height: 1.15; letter-spacing: .01em; transform: none; }
+.hero-poster-cap { font-size: 1.5rem; transform: none; }
+
+/* small UI text that used the condensed display face: refined spaced capitals */
+.menu > ul a, .btn, .link-arrow, .tabs a, .social, .more, .pasteup-label, .qr-stamp span, .stamp, .sticker, .tag {
+  font-family: var(--f-label); font-weight: 600; text-transform: uppercase; letter-spacing: .12em;
+}
+.menu > ul a { font-size: .8rem; padding: 12px 10px 10px; }
+.btn { font-size: .82rem; }
+.btn-lg { font-size: .95rem; }
+.link-arrow, .more { font-size: .78rem; }
+.tabs a { font-size: .74rem; }
+.social { font-size: .72rem; }
+.pasteup-label { font-size: .78rem; }
+@media (max-width: 960px) {
+  .menu > ul a { font-family: var(--f-display); text-transform: none; letter-spacing: 0; font-weight: 500; font-size: 2rem; padding: 14px 4px 10px; }
+  .menu > ul .sub a { font-size: 1.5rem; padding: 8px 4px; }
+}
+
+/* ---------- team (About page) ---------- */
+.team { padding-top: 0; }
+.team-list { list-style: none; padding: 0; margin: 24px 0 0; display: grid; gap: 22px; grid-template-columns: repeat(auto-fill, minmax(min(100%, 300px), 1fr)); }
+.member { display: grid; grid-template-columns: 84px 1fr; gap: 18px; align-items: center; background: var(--paper); padding: 20px; box-shadow: var(--shadow); }
+.member-photo { width: 84px; height: 84px; border-radius: 50%; object-fit: cover; }
+.member-initials { display: grid; place-items: center; background: var(--blue); color: #fff; font: italic 500 2rem/1 var(--f-display); }
+.member h3 { font-size: 1.6rem; margin: 0; }
+.member-role { font: 600 .7rem/1.3 var(--f-label); letter-spacing: .14em; text-transform: uppercase; color: var(--red); margin: 0 0 6px; }
+
+/* ---------- partners strip (Books, Events, News) ---------- */
+.partners-strip { border-top: 1px solid var(--wall-2); background: var(--paper); padding: 34px 0 38px; margin-top: 30px; }
+.partners-strip .wrap { display: flex; flex-wrap: wrap; align-items: center; gap: 18px 34px; }
+.partners-strip .kicker { margin: 0; color: var(--muted); }
+.partners-strip ul { list-style: none; margin: 0; padding: 0; display: flex; flex-wrap: wrap; align-items: center; gap: 18px 34px; flex: 1; }
+.partners-strip img { max-height: 54px; max-width: 150px; object-fit: contain; filter: grayscale(1); opacity: .8; transition: .15s; }
+.partners-strip a:hover img { filter: none; opacity: 1; }
+.partners-strip span { font: italic 500 1.3rem/1 var(--f-display); color: var(--ink-2); }
+.sticker { font-size: .74rem; padding: 9px 12px 8px; }
+.tag { font-size: .32em; }
+.hero-kicker .tag { font-size: .72rem; }
+
+/* "Pomóż Fundacji" menu button: keep a solid background when active / pressed / focused
+   (the generic active-link highlight made the white text unreadable) */
+.menu .nav-support > a,
+.menu .nav-support.is-active > a { background: var(--red); color: #fff !important; }
+.menu .nav-support.is-active > a,
+.menu .nav-support > a:hover,
+.menu .nav-support > a:active,
+.menu .nav-support > a:focus-visible { background: var(--ink); color: #fff !important; }
+
+/* admin-free styles for partner logos on a book / event / news page */
+.partners-strip .kicker { color: var(--ink-2); }
+
+/* Mobile menu fix: backdrop-filter on the header made it the containing block of the
+   position:fixed menu, so the open menu was squeezed into the 79px header bar. */
+@media (max-width: 960px) {
+  .site-head { backdrop-filter: none; -webkit-backdrop-filter: none; background: var(--paper); }
+}
+.page-static .team { margin-top: 56px; }
+.page-static .team .h-lg { margin-bottom: .2em; }

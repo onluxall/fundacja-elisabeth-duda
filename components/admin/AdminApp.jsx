@@ -82,7 +82,7 @@ function MdArea({ value, onChange, id }) {
   );
 }
 
-function Field({ f, value, set, books, err }) {
+function Field({ f, value, set, books, partners = [], err }) {
   const id = `f_${f.name}`;
   const v = value ?? '';
   const [busy, setBusy] = useState(false);
@@ -97,6 +97,18 @@ function Field({ f, value, set, books, err }) {
   switch (f.kind) {
     case 'textarea': input = <MdArea id={id} value={v} onChange={set} />; break;
     case 'select': input = <select id={id} value={v} onChange={(e) => set(e.target.value)}>{Object.entries(f.options).map(([k, l]) => <option key={k} value={k}>{l}</option>)}</select>; break;
+    case 'partners': {
+      const sel = (Array.isArray(value) ? value : []).map(Number);
+      const toggle = (pid, on) => set(on ? [...new Set([...sel, pid])] : sel.filter((x) => x !== pid));
+      input = (
+        <div className="partner-picks" id={id}>
+          {partners.map((p) => (
+            <label key={p.id} className="check"><input type="checkbox" checked={sel.includes(p.id)} onChange={(e) => toggle(p.id, e.target.checked)} /> {p.name}{!p.published && <span className="muted"> (ukryty)</span>}</label>
+          ))}
+          {!partners.length && <p className="muted small">Brak partnerów. <Link href={A('partners/new')}>Dodaj pierwszego partnera →</Link></p>}
+        </div>
+      ); break;
+    }
     case 'book': input = <select id={id} value={v ?? ''} onChange={(e) => set(e.target.value ? Number(e.target.value) : null)}><option value="">— bez książki —</option>{books.map((b) => <option key={b.id} value={b.id}>{b.title_pl}</option>)}</select>; break;
     case 'date': input = <input type="date" id={id} value={v ? String(v).slice(0, 10) : ''} onChange={(e) => set(e.target.value || null)} />; break;
     case 'datetime': input = <input type="datetime-local" id={id} value={v ? String(v).slice(0, 16) : ''} onChange={(e) => set(e.target.value || null)} />; break;
@@ -187,7 +199,7 @@ function EntityList({ ent, toast }) {
 
   const cell = (r, k) => {
     const v = r[k];
-    if (['cover', 'image', 'logo'].includes(k)) return v ? <img className="thumb" src={mediaUrl(v)} alt="" /> : <span className="thumb thumb-0" />;
+    if (['cover', 'image', 'logo', 'photo'].includes(k)) return v ? <img className="thumb" src={mediaUrl(v)} alt="" /> : <span className="thumb thumb-0" />;
     if (k === 'published') return v ? <span className="ok">● tak</span> : <span className="no">○ ukryte</span>;
     if (k === 'category') return { show: 'Przedstawienie', meeting: 'Spotkanie', other: 'Inne' }[v] || v;
     if (k === 'starts_at' || k === 'date') return v ? fmtDate(v, 'pl') : '—';
@@ -223,6 +235,7 @@ function EntityForm({ ent, id, toast }) {
   const isNew = id === 'new';
   const [row, setRow] = useState(isNew ? { ...def.defaults } : null);
   const [books, setBooks] = useState([]);
+  const [partners, setPartners] = useState([]);
   const [dirty, setDirty] = useState(false);
   const [saving, setSaving] = useState(false);
   const [qrBase, setQrBase] = useState('');
@@ -231,6 +244,7 @@ function EntityForm({ ent, id, toast }) {
 
   useEffect(() => {
     if (!isNew) sb().from(ent).select('*').eq('id', id).maybeSingle().then(({ data }) => { if (!data) { toast('Nie znaleziono wpisu.', 'err'); router.push(A(ent)); } else setRow(data); });
+    if (flatFields(def).some((f) => f.kind === 'partners')) sb().from('partners').select('id,name,published').order('sort').order('name').then(({ data }) => setPartners(data || []));
     if (ent === 'qr') {
       sb().from('books').select('id,title_pl').order('sort').then(({ data }) => setBooks(data || []));
       sb().from('settings').select('value').eq('key', 'qr_base').maybeSingle().then(({ data }) => setQrBase(data?.value || window.location.origin));
@@ -253,6 +267,7 @@ function EntityForm({ ent, id, toast }) {
       if (f.kind === 'url' && v && !/^https?:\/\//i.test(v)) v = 'https://' + v.trim();
       if (typeof v === 'string' && !['textarea'].includes(f.kind)) v = v.trim();
       if (['date', 'datetime'].includes(f.kind) && !v) v = null;
+      if (f.kind === 'partners') { data[f.name] = Array.isArray(v) ? v.map(Number) : []; continue; }
       data[f.name] = v ?? (f.kind === 'checkbox' ? false : ['number'].includes(f.kind) ? 0 : ['book', 'date', 'datetime'].includes(f.kind) ? null : '');
     }
     for (const f of def.fields.filter((x) => x.required)) {
@@ -287,15 +302,15 @@ function EntityForm({ ent, id, toast }) {
   };
 
   const render = (f, i) => {
-    if (f.row) return <div className="row" key={i}>{f.row.map((c) => <Field key={c.name} f={c} value={row[c.name]} set={set(c.name)} books={books} err={(m) => toast(m, 'err')} />)}</div>;
+    if (f.row) return <div className="row" key={i}>{f.row.map((c) => <Field key={c.name} f={c} value={row[c.name]} set={set(c.name)} books={books} partners={partners} err={(m) => toast(m, 'err')} />)}</div>;
     if (f.pair) return (
       <div className="pair" key={i}>
-        <div className="pair-col"><span className="flag">PL</span><Field f={{ ...f, help: undefined, name: `${f.name}_pl`, label: `${f.label} — po polsku` }} value={row[`${f.name}_pl`]} set={set(`${f.name}_pl`)} books={books} err={(m) => toast(m, 'err')} /></div>
-        <div className="pair-col"><span className="flag flag-fr">FR</span><Field f={{ ...f, help: undefined, name: `${f.name}_fr`, label: `${f.label} — en français`, required: false }} value={row[`${f.name}_fr`]} set={set(`${f.name}_fr`)} books={books} err={(m) => toast(m, 'err')} /></div>
+        <div className="pair-col"><span className="flag">PL</span><Field f={{ ...f, help: undefined, name: `${f.name}_pl`, label: `${f.label} — po polsku` }} value={row[`${f.name}_pl`]} set={set(`${f.name}_pl`)} books={books} partners={partners} err={(m) => toast(m, 'err')} /></div>
+        <div className="pair-col"><span className="flag flag-fr">FR</span><Field f={{ ...f, help: undefined, name: `${f.name}_fr`, label: `${f.label} — en français`, required: false }} value={row[`${f.name}_fr`]} set={set(`${f.name}_fr`)} books={books} partners={partners} err={(m) => toast(m, 'err')} /></div>
         {f.help && <p className="help pair-help">{f.help}</p>}
       </div>
     );
-    return <Field key={i} f={f} value={row[f.name]} set={set(f.name)} books={books} err={(m) => toast(m, 'err')} />;
+    return <Field key={i} f={f} value={row[f.name]} set={set(f.name)} books={books} partners={partners} err={(m) => toast(m, 'err')} />;
   };
   const title = isNew ? `Nowy: ${def.one}` : (row.title_pl || row.name || row.code || 'Edycja');
   return (

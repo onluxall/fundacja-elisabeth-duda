@@ -66,7 +66,7 @@ export async function Home({ lang }) {
         <div className="wrap sec">
           <SectionHead title={t('events')} tag="02" more={url('events', lang)} moreLabel={t('all_events')} />
           {events.length ? <div className="grid grid-3">{events.map((ev, i) => <EventCard key={ev.id} ev={ev} i={i} lang={lang} />)}</div> : (
-            <div className="cats">{['books', 'shows', 'meetings', 'partners'].map((k) => <a key={k} className="cat" href={url(k, lang)}><span>{t(k)}</span></a>)}</div>
+            <div className="cats">{['shows', 'meetings'].map((k) => <a key={k} className="cat" href={url(k, lang)}><span>{t(k)}</span></a>)}</div>
           )}
         </div>
       </section>
@@ -98,7 +98,53 @@ export async function StaticPage({ lang, r }) {
       <h1 className="h-xl"><span className="underline-squiggle">{r.title}</span></h1>
       {p.image && <Pasteup src={mediaUrl(p.image)} cls="pasteup-static" />}
       <Prose src={tr(p, 'body', lang)} />
+      {r.key === 'about' && <Team lang={lang} />}
     </section>
+  );
+}
+
+async function Team({ lang }) {
+  const t = tFor(lang);
+  const team = await C.getTeam();
+  if (!team.length) return null;
+  const initials = (n) => n.trim().split(/\s+/).slice(0, 2).map((w) => w[0]).join('');
+  return (
+    <div className="team">
+      <h2 className="h-lg">{t('team')}</h2>
+      <ul className="team-list">
+        {team.map((m) => (
+          <li key={m.id} className="member">
+            {m.photo ? <img className="member-photo" src={mediaUrl(m.photo)} alt="" loading="lazy" /> : <span className="member-photo member-initials" aria-hidden="true">{initials(m.name)}</span>}
+            <div>
+              <p className="member-role">{tr(m, 'role', lang)}</p>
+              <h3>{m.name}</h3>
+              {tr(m, 'body', lang) && <Prose src={tr(m, 'body', lang)} />}
+              {m.email && <p><a href={`mailto:${m.email}`}>{m.email}</a></p>}
+            </div>
+          </li>
+        ))}
+      </ul>
+    </div>
+  );
+}
+
+/** Partners picked on this book / event / news item. Hidden when none. */
+async function ItemPartners({ ids, lang }) {
+  const t = tFor(lang);
+  const ps = await C.getPartnersByIds(ids);
+  if (!ps.length) return null;
+  return (
+    <aside className="partners-strip" aria-label={t('partners')}>
+      <div className="wrap">
+        <p className="kicker">{t('partners')}</p>
+        <ul>
+          {ps.map((p) => {
+            const inner = p.logo ? <img src={mediaUrl(p.logo)} alt={p.name} loading="lazy" /> : <span>{p.name}</span>;
+            return <li key={p.id}>{p.url ? <a href={p.url} target="_blank" rel="noopener" title={p.name}>{inner}</a> : inner}</li>;
+          })}
+        </ul>
+      </div>
+    </aside>
   );
 }
 
@@ -107,8 +153,7 @@ export async function Books({ lang }) {
   const [s, books, qrBooks] = await Promise.all([C.getSettings(), C.getBooks(), C.getQrBookIds()]);
   return (
     <section className="wrap sec">
-      <EventsTabs active="books" lang={lang} />
-      <h1 className="h-xl">{t('books')}</h1>
+      <h1 className="h-xl"><span className="underline-squiggle">{t('books')}</span></h1>
       {books.length ? <div className="grid grid-3">{books.map((b, i) => <BookCard key={b.id} b={b} i={i} lang={lang} hasQr={qrBooks.has(b.id)} siteName={s.site_name} />)}</div> : <Empty lang={lang} />}
     </section>
   );
@@ -130,7 +175,7 @@ export async function Book({ lang, r }) {
     <>
       <JsonLd graph={[schema, orgSchema(s, lang)]} />
       <section className="wrap sec">
-        <EventsTabs active="books" lang={lang} />
+        <p><a className="link-arrow" href={url('books', lang)}>← {t('books')}</a></p>
         <div className="book-hero">
           <div className="book-cover-col"><div className="pasteup"><span className="tape tape-a"></span><span className="tape tape-b"></span><BookCover b={b} lang={lang} cls="cover-lg" siteName={s.site_name} /></div></div>
           <div className="book-info">
@@ -157,6 +202,7 @@ export async function Book({ lang, r }) {
           </ol>
         </div></section>
       )}
+      <ItemPartners ids={b.partner_ids} lang={lang} />
     </>
   );
 }
@@ -186,6 +232,7 @@ export function Event({ lang, r }) {
   if (ev.image) schema.image = mediaUrl(ev.image);
   let host = ev.link; try { host = new URL(ev.link).hostname; } catch { /* keep raw */ }
   return (
+    <>
     <article className="wrap sec narrow">
       <JsonLd graph={[schema]} />
       <EventsTabs active={r.key} lang={lang} />
@@ -200,6 +247,8 @@ export function Event({ lang, r }) {
       {ev.link && <p><a className="btn btn-red" href={ev.link} target="_blank" rel="noopener">↗ {host}</a></p>}
       <p><a className="link-arrow" href={url(r.key, lang)}>← {t('back')}</a></p>
     </article>
+    <ItemPartners ids={ev.partner_ids} lang={lang} />
+    </>
   );
 }
 
@@ -237,6 +286,7 @@ export function NewsItem({ lang, r }) {
   const t = tFor(lang);
   const n = r.data;
   return (
+    <>
     <article className="wrap sec narrow">
       <JsonLd graph={[{ '@type': 'NewsArticle', headline: tr(n, 'title', lang), datePublished: n.date, publisher: { '@id': `${SITE_URL}/#org` }, inLanguage: lang }]} />
       <p className="kicker">{fmtDate(n.date, lang)}</p>
@@ -245,6 +295,8 @@ export function NewsItem({ lang, r }) {
       <Prose src={tr(n, 'body', lang)} />
       <p><a className="link-arrow" href={url('news', lang)}>← {t('all_news')}</a></p>
     </article>
+    <ItemPartners ids={n.partner_ids} lang={lang} />
+    </>
   );
 }
 

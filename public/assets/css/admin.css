@@ -173,3 +173,6 @@ hr { border: 0; border-top: 1px solid var(--line); width: 100%; }
 .main > .flash { position: sticky; top: 12px; z-index: 30; box-shadow: 0 8px 24px -12px rgba(0,0,0,.3); }
 .auth-links { margin-top: 14px; }
 .auth .flash { margin: 0 0 6px; }
+
+/* partner picker on books / events / news */
+.partner-picks { display: grid; gap: 6px 18px; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); padding: 6px 0; }

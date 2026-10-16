@@ -23,7 +23,7 @@ export default async function SiteShell({ lang, nav = '', alt, children }) {
   const t = tFor(lang);
   const other = lang === 'pl' ? 'fr' : 'pl';
   alt = alt || { pl: url('home', 'pl'), fr: url('home', 'fr') };
-  const items = ['about', 'events', 'news', 'support', 'contact'];
+  const items = ['about', 'books', 'events', 'news', 'support', 'contact'];
 
   return (
     <>
@@ -43,7 +43,7 @@ export default async function SiteShell({ lang, nav = '', alt, children }) {
                   <a href={url('events', lang)} aria-current={nav === 'events' ? 'page' : undefined}>{t('events')}</a>
                   <button className="sub-toggle" type="button" aria-expanded="false" aria-label={t('events')}>▾</button>
                   <ul className="sub">
-                    {['books', 'shows', 'meetings', 'partners'].map((x) => <li key={x}><a href={url(x, lang)}>{t(x)}</a></li>)}
+                    {['shows', 'meetings'].map((x) => <li key={x}><a href={url(x, lang)}>{t(x)}</a></li>)}
                   </ul>
                 </li>
               ) : (
@@ -72,11 +72,11 @@ export default async function SiteShell({ lang, nav = '', alt, children }) {
           </div>
           <div>
             <h2 className="foot-h">{t('events')}</h2>
-            <ul className="foot-links">{['books', 'shows', 'meetings', 'partners'].map((x) => <li key={x}><a href={url(x, lang)}>{t(x)}</a></li>)}</ul>
+            <ul className="foot-links">{['shows', 'meetings'].map((x) => <li key={x}><a href={url(x, lang)}>{t(x)}</a></li>)}</ul>
           </div>
           <div>
             <h2 className="foot-h">{s.site_name}</h2>
-            <ul className="foot-links">{['about', 'news', 'support', 'contact'].map((x) => <li key={x}><a href={url(x, lang)}>{t(x)}</a></li>)}</ul>
+            <ul className="foot-links">{['about', 'books', 'news', 'support', 'contact'].map((x) => <li key={x}><a href={url(x, lang)}>{t(x)}</a></li>)}</ul>
             <p className="foot-legal">
               {s.krs && <>KRS {s.krs}<br /></>}
               {s.nip && <>NIP {s.nip}<br /></>}

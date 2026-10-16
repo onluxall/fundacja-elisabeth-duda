@@ -1,5 +1,5 @@
 // Content types edited in the panel. Each screen (list + form) is generated from these definitions.
-// Field kinds: text, textarea (markdown), url, date, datetime, number, checkbox, select, image, media, book, slug, code
+// Field kinds: text, textarea (markdown), url, date, datetime, number, checkbox, select, image, media, book, partners, slug, code
 // pair: true → the field exists in PL and FR (name_pl / name_fr), shown side by side.
 
 export const MD_HELP = 'Formatowanie: **pogrubienie**, *kursywa*, ## Nagłówek, - lista, [tekst linku](https://…), > cytat. Pusta linia = nowy akapit.';
@@ -21,6 +21,7 @@ export const ENTITIES = {
       { name: 'body', label: 'Opis', kind: 'textarea', pair: true, help: MD_HELP },
       { name: 'cover', label: 'Okładka', kind: 'image', folder: 'covers', help: 'JPG/PNG/WebP, najlepiej pionowa 2:3. Bez okładki wyświetla się graficzny plakat z tytułem.' },
       { name: 'buy_url', label: 'Link „Kup książkę”', kind: 'url', help: 'Strona wydawcy lub księgarni.' },
+      { name: 'partner_ids', label: 'Partnerzy', kind: 'partners', help: 'Zaznacz partnerów tej pozycji — ich logo pokaże się na jej stronie. Nowego partnera dodasz w zakładce Partnerzy.' },
       { row: [{ name: 'featured', label: 'Wyróżniona na stronie głównej', kind: 'checkbox' }, { name: 'published', label: 'Widoczna na stronie', kind: 'checkbox' }, { name: 'sort', label: 'Kolejność (mniejsza = wyżej)', kind: 'number' }] },
     ],
   },
@@ -41,6 +42,7 @@ export const ENTITIES = {
       { name: 'body', label: 'Opis', kind: 'textarea', pair: true, help: MD_HELP },
       { name: 'image', label: 'Zdjęcie / plakat', kind: 'image', folder: 'events' },
       { name: 'link', label: 'Link (bilety, wydarzenie na Facebooku…)', kind: 'url' },
+      { name: 'partner_ids', label: 'Partnerzy', kind: 'partners', help: 'Zaznacz partnerów tej pozycji — ich logo pokaże się na jej stronie. Nowego partnera dodasz w zakładce Partnerzy.' },
       { row: [{ name: 'published', label: 'Widoczne na stronie', kind: 'checkbox' }] },
     ],
   },
@@ -56,13 +58,14 @@ export const ENTITIES = {
       { row: [{ name: 'date', label: 'Data', kind: 'date' }, { name: 'published', label: 'Widoczny na stronie', kind: 'checkbox' }] },
       { name: 'body', label: 'Treść', kind: 'textarea', pair: true, help: MD_HELP },
       { name: 'image', label: 'Zdjęcie', kind: 'image', folder: 'news' },
+      { name: 'partner_ids', label: 'Partnerzy', kind: 'partners', help: 'Zaznacz partnerów tej pozycji — ich logo pokaże się na jej stronie. Nowego partnera dodasz w zakładce Partnerzy.' },
     ],
   },
   partners: {
     label: 'Partnerzy', one: 'partnera', icon: '🤝',
     order: [['sort', true], ['name', true]],
     list: [['logo', ''], ['name', 'Nazwa'], ['url', 'Strona'], ['published', 'Widoczny']],
-    publicUrl: () => '/partnerzy',
+    publicUrl: () => '/ksiazki',
     defaults: { published: true, sort: 0 },
     fields: [
       { name: 'name', label: 'Nazwa', kind: 'text', required: true },
@@ -70,6 +73,21 @@ export const ENTITIES = {
       { name: 'logo', label: 'Logo', kind: 'image', folder: 'partners' },
       { name: 'body', label: 'Krótki opis', kind: 'textarea', pair: true, help: MD_HELP },
       { row: [{ name: 'sort', label: 'Kolejność', kind: 'number' }, { name: 'published', label: 'Widoczny na stronie', kind: 'checkbox' }] },
+    ],
+  },
+  team: {
+    label: 'Zespół', one: 'osobę', icon: '👤',
+    order: [['sort', true], ['id', true]],
+    list: [['photo', ''], ['name', 'Imię i nazwisko'], ['role_pl', 'Funkcja'], ['published', 'Widoczna']],
+    publicUrl: () => '/o-nas',
+    defaults: { published: true, sort: 0 },
+    fields: [
+      { name: 'name', label: 'Imię i nazwisko', kind: 'text', required: true },
+      { name: 'role', label: 'Funkcja', kind: 'text', pair: true, help: 'np. Dyrektor Komunikacji / Directeur de la communication' },
+      { name: 'photo', label: 'Zdjęcie', kind: 'image', folder: 'team', help: 'Najlepiej kwadratowe. Bez zdjęcia pokażą się inicjały.' },
+      { name: 'email', label: 'E-mail (opcjonalnie)', kind: 'text' },
+      { name: 'body', label: 'Krótki opis (opcjonalnie)', kind: 'textarea', pair: true, help: MD_HELP },
+      { row: [{ name: 'sort', label: 'Kolejność', kind: 'number' }, { name: 'published', label: 'Widoczna na stronie', kind: 'checkbox' }] },
     ],
   },
   qr: {
