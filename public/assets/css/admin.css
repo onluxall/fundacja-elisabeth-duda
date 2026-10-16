@@ -176,3 +176,5 @@ hr { border: 0; border-top: 1px solid var(--line); width: 100%; }
 
 /* partner picker on books / events / news */
 .partner-picks { display: grid; gap: 6px 18px; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); padding: 6px 0; }
+.partner-new { margin-top: 10px; padding: 14px 16px 4px; border: 1px dashed rgba(0,0,0,.25); border-radius: 8px; background: rgba(255,255,255,.6); }
+.partner-new .row { gap: 14px; }

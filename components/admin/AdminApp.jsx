@@ -82,7 +82,67 @@ function MdArea({ value, onChange, id }) {
   );
 }
 
-function Field({ f, value, set, books, partners = [], err }) {
+/** Tick the partners of one book / event / news item — or add a new partner right here. */
+function PartnerPicker({ id, value, set, partners, onCreated, err }) {
+  const sel = (Array.isArray(value) ? value : []).map(Number);
+  const toggle = (pid, on) => set(on ? [...new Set([...sel, pid])] : sel.filter((x) => x !== pid));
+  const [open, setOpen] = useState(false);
+  const [np, setNp] = useState({ name: '', url: '', logo: '' });
+  const [busy, setBusy] = useState(false);
+  const noEnter = (e) => { if (e.key === 'Enter') { e.preventDefault(); add(); } };
+  const onLogo = async (e) => {
+    const file = e.target.files?.[0]; if (!file) return;
+    setBusy(true);
+    try { const path = await uploadFile(file, 'partners'); setNp((x) => ({ ...x, logo: path })); } catch (x) { err(x.message); }
+    setBusy(false); e.target.value = '';
+  };
+  const add = async () => {
+    const name = np.name.trim();
+    if (!name) return err('Wpisz nazwę partnera.');
+    let url = np.url.trim();
+    if (url && !/^https?:\/\//i.test(url)) url = 'https://' + url;
+    setBusy(true);
+    const { data, error } = await sb().from('partners').insert({ name, url, logo: np.logo, published: true, sort: 0 }).select('id,name,published').single();
+    setBusy(false);
+    if (error) return err(error.message);
+    onCreated?.(data);
+    set([...new Set([...sel, data.id])]);
+    setNp({ name: '', url: '', logo: '' }); setOpen(false);
+  };
+  return (
+    <div id={id}>
+      <div className="partner-picks">
+        {partners.map((p) => (
+          <label key={p.id} className="check"><input type="checkbox" checked={sel.includes(p.id)} onChange={(e) => toggle(p.id, e.target.checked)} /> {p.name}{!p.published && <span className="muted"> (ukryty)</span>}</label>
+        ))}
+        {!partners.length && !open && <p className="muted small">Brak partnerów — dodaj pierwszego poniżej.</p>}
+      </div>
+      {!open ? (
+        <button type="button" className="btn btn-sm btn-ghost" onClick={() => setOpen(true)}>+ Dodaj nowego partnera</button>
+      ) : (
+        <div className="partner-new">
+          <div className="row">
+            <div className="fld"><label>Nazwa partnera *</label><input value={np.name} onChange={(e) => setNp({ ...np, name: e.target.value })} onKeyDown={noEnter} autoFocus /></div>
+            <div className="fld"><label>Strona internetowa</label><input type="url" placeholder="https://" value={np.url} onChange={(e) => setNp({ ...np, url: e.target.value })} onKeyDown={noEnter} /></div>
+          </div>
+          <div className="fld"><label>Logo</label>
+            <div className="img-field">
+              {np.logo && <img src={mediaUrl(np.logo)} alt="" />}
+              <input type="file" accept="image/jpeg,image/png,image/webp,image/gif" onChange={onLogo} disabled={busy} />
+              {busy && <span className="small muted">Wgrywanie…</span>}
+            </div>
+          </div>
+          <p>
+            <button type="button" className="btn btn-sm btn-red" onClick={add} disabled={busy}>Dodaj i zaznacz</button>{' '}
+            <button type="button" className="btn btn-sm btn-ghost" onClick={() => { setOpen(false); setNp({ name: '', url: '', logo: '' }); }}>Anuluj</button>
+          </p>
+        </div>
+      )}
+    </div>
+  );
+}
+
+function Field({ f, value, set, books, partners = [], onPartnerCreated, err }) {
   const id = `f_${f.name}`;
   const v = value ?? '';
   const [busy, setBusy] = useState(false);
@@ -97,18 +157,8 @@ function Field({ f, value, set, books, partners = [], err }) {
   switch (f.kind) {
     case 'textarea': input = <MdArea id={id} value={v} onChange={set} />; break;
     case 'select': input = <select id={id} value={v} onChange={(e) => set(e.target.value)}>{Object.entries(f.options).map(([k, l]) => <option key={k} value={k}>{l}</option>)}</select>; break;
-    case 'partners': {
-      const sel = (Array.isArray(value) ? value : []).map(Number);
-      const toggle = (pid, on) => set(on ? [...new Set([...sel, pid])] : sel.filter((x) => x !== pid));
-      input = (
-        <div className="partner-picks" id={id}>
-          {partners.map((p) => (
-            <label key={p.id} className="check"><input type="checkbox" checked={sel.includes(p.id)} onChange={(e) => toggle(p.id, e.target.checked)} /> {p.name}{!p.published && <span className="muted"> (ukryty)</span>}</label>
-          ))}
-          {!partners.length && <p className="muted small">Brak partnerów. <Link href={A('partners/new')}>Dodaj pierwszego partnera →</Link></p>}
-        </div>
-      ); break;
-    }
+    case 'partners':
+      input = <PartnerPicker id={id} value={value} set={set} partners={partners} onCreated={onPartnerCreated} err={err} />; break;
     case 'book': input = <select id={id} value={v ?? ''} onChange={(e) => set(e.target.value ? Number(e.target.value) : null)}><option value="">— bez książki —</option>{books.map((b) => <option key={b.id} value={b.id}>{b.title_pl}</option>)}</select>; break;
     case 'date': input = <input type="date" id={id} value={v ? String(v).slice(0, 10) : ''} onChange={(e) => set(e.target.value || null)} />; break;
     case 'datetime': input = <input type="datetime-local" id={id} value={v ? String(v).slice(0, 16) : ''} onChange={(e) => set(e.target.value || null)} />; break;
@@ -302,15 +352,15 @@ function EntityForm({ ent, id, toast }) {
   };
 
   const render = (f, i) => {
-    if (f.row) return <div className="row" key={i}>{f.row.map((c) => <Field key={c.name} f={c} value={row[c.name]} set={set(c.name)} books={books} partners={partners} err={(m) => toast(m, 'err')} />)}</div>;
+    if (f.row) return <div className="row" key={i}>{f.row.map((c) => <Field key={c.name} f={c} value={row[c.name]} set={set(c.name)} books={books} partners={partners} onPartnerCreated={(p) => setPartners((l) => [...l, p])} err={(m) => toast(m, 'err')} />)}</div>;
     if (f.pair) return (
       <div className="pair" key={i}>
-        <div className="pair-col"><span className="flag">PL</span><Field f={{ ...f, help: undefined, name: `${f.name}_pl`, label: `${f.label} — po polsku` }} value={row[`${f.name}_pl`]} set={set(`${f.name}_pl`)} books={books} partners={partners} err={(m) => toast(m, 'err')} /></div>
-        <div className="pair-col"><span className="flag flag-fr">FR</span><Field f={{ ...f, help: undefined, name: `${f.name}_fr`, label: `${f.label} — en français`, required: false }} value={row[`${f.name}_fr`]} set={set(`${f.name}_fr`)} books={books} partners={partners} err={(m) => toast(m, 'err')} /></div>
+        <div className="pair-col"><span className="flag">PL</span><Field f={{ ...f, help: undefined, name: `${f.name}_pl`, label: `${f.label} — po polsku` }} value={row[`${f.name}_pl`]} set={set(`${f.name}_pl`)} books={books} partners={partners} onPartnerCreated={(p) => setPartners((l) => [...l, p])} err={(m) => toast(m, 'err')} /></div>
+        <div className="pair-col"><span className="flag flag-fr">FR</span><Field f={{ ...f, help: undefined, name: `${f.name}_fr`, label: `${f.label} — en français`, required: false }} value={row[`${f.name}_fr`]} set={set(`${f.name}_fr`)} books={books} partners={partners} onPartnerCreated={(p) => setPartners((l) => [...l, p])} err={(m) => toast(m, 'err')} /></div>
         {f.help && <p className="help pair-help">{f.help}</p>}
       </div>
     );
-    return <Field key={i} f={f} value={row[f.name]} set={set(f.name)} books={books} partners={partners} err={(m) => toast(m, 'err')} />;
+    return <Field key={i} f={f} value={row[f.name]} set={set(f.name)} books={books} partners={partners} onPartnerCreated={(p) => setPartners((l) => [...l, p])} err={(m) => toast(m, 'err')} />;
   };
   const title = isNew ? `Nowy: ${def.one}` : (row.title_pl || row.name || row.code || 'Edycja');
   return (
