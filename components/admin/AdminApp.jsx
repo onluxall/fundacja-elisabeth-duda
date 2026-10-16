@@ -475,7 +475,7 @@ function UsersScreen({ me, toast }) {
               <td className="r">{a.user_id === me ? <span className="muted">to Ty</span> : a.is_admin ? <button className="btn btn-sm btn-danger" onClick={() => revoke(a)}>Odbierz dostęp</button> : <button className="btn btn-sm btn-red" onClick={() => approve(a)}>Nadaj dostęp</button>}</td></tr>
           ))}</tbody></table>
           <h3>Jak dodać osobę?</h3>
-          <p className="small">Wyślij jej adres <b>{typeof window !== 'undefined' ? window.location.origin : ''}/admin</b> → „Utwórz konto”. Po potwierdzeniu e-maila pojawi się tutaj — kliknij <b>Nadaj dostęp</b>.</p>
+          <p className="small">Nowe konto zakłada opiekun techniczny strony (tapFunnel). Gdy konto zostanie utworzone, pojawi się tutaj — kliknij <b>Nadaj dostęp</b>.</p>
         </section>
       </div>
     </>
@@ -596,7 +596,7 @@ function Login() {
       </form>
       <p className="muted small auth-links">
         {mode !== 'login' && <a href="#" onClick={(e) => { e.preventDefault(); setMode('login'); setMsg(null); }}>← Logowanie</a>}
-        {mode === 'login' && <><a href="#" onClick={(e) => { e.preventDefault(); setMode('reset'); setMsg(null); }}>Nie pamiętasz hasła?</a> · <a href="#" onClick={(e) => { e.preventDefault(); setMode('signup'); setMsg(null); }}>Utwórz konto</a></>}
+        {mode === 'login' && <a href="#" onClick={(e) => { e.preventDefault(); setMode('reset'); setMsg(null); }}>Nie pamiętasz hasła?</a>}
       </p>
       <p className="muted small"><a href="/">← wróć na stronę</a></p>
     </AuthBox>
