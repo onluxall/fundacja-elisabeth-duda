@@ -7,7 +7,10 @@ import { sb } from '@/lib/browser';
 import { mediaUrl, slugify, fmtDate, excerpt } from '@/lib/format';
 import { ENTITIES, flatFields, PAGES, SETTINGS, MD_HELP } from './entities';
 
-const A = (p = '') => '/admin' + (p ? '/' + p : '');
+// On admin.fundacja-ed.com the panel sits at the root; elsewhere (previews, local) under /admin.
+// Only evaluated client-side after the session check, so server and client markup never differ.
+const onAdminHost = () => typeof window !== 'undefined' && window.location.hostname.startsWith('admin.');
+const A = (p = '') => (onAdminHost() ? '' : '/admin') + (p ? '/' + p : '') || '/';
 
 /* ------------------------------------------------------------------ helpers */
 
@@ -451,7 +454,7 @@ function SettingsScreen({ toast }) {
               <div className="fld" key={k}><label htmlFor={`s_${k}`}>{l}</label>
                 {k.startsWith('seo_') ? <textarea id={`s_${k}`} rows={3} value={s[k] || ''} onChange={(e) => { setS({ ...s, [k]: e.target.value }); setDirty(true); }} />
                   : <input id={`s_${k}`} type="text" value={s[k] || ''} onChange={(e) => { setS({ ...s, [k]: e.target.value }); setDirty(true); }} />}
-                {k === 'qr_base' && <p className="help">Ustaw raz, przed drukiem: <code>https://fundacja-ed.com</code>. Ten adres trafia do kodów QR w książkach.</p>}
+                {k === 'qr_base' && <p className="help">Ustaw raz, przed drukiem: <code>https://fundacja-ed.com</code> (adres strony publicznej, nie panelu). Ten adres trafia do kodów QR w książkach.</p>}
               </div>
             ))}
           </div></fieldset>
@@ -619,7 +622,7 @@ function Login() {
   const submit = async (e) => {
     e.preventDefault(); setBusy(true); setMsg(null);
     const auth = sb().auth;
-    const redirect = window.location.origin + '/admin';
+    const redirect = window.location.origin + A();
     if (mode === 'login') {
       const { error } = await auth.signInWithPassword({ email: f.email.trim(), password: f.pass });
       if (error) setMsg(['err', error.message.includes('Email not confirmed') ? 'Potwierdź najpierw adres e-mail (link w wiadomości od nas).' : 'Nieprawidłowy e-mail lub hasło.']);
