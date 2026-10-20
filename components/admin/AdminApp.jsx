@@ -11,6 +11,8 @@ import { ENTITIES, flatFields, PAGES, SETTINGS, MD_HELP } from './entities';
 // Only evaluated client-side after the session check, so server and client markup never differ.
 const onAdminHost = () => typeof window !== 'undefined' && window.location.hostname.startsWith('admin.');
 const A = (p = '') => (onAdminHost() ? '' : '/admin') + (p ? '/' + p : '') || '/';
+// Links from the panel to the public site must leave the admin subdomain.
+const PUB = (path = '/') => (onAdminHost() ? window.location.origin.replace('//admin.', '//') : '') + path;
 
 /* ------------------------------------------------------------------ helpers */
 
@@ -247,7 +249,7 @@ function EntityList({ ent, toast }) {
     def.order.forEach(([c, asc]) => { qy = qy.order(c, { ascending: asc, nullsFirst: false }); });
     qy.then(({ data, error }) => { if (error) toast(error.message, 'err'); setRows(data || []); });
     sb().from('books').select('id,title_pl').then(({ data }) => setBooks(Object.fromEntries((data || []).map((b) => [b.id, b.title_pl]))));
-    if (ent === 'qr') sb().from('settings').select('value').eq('key', 'qr_base').maybeSingle().then(({ data }) => setBase(data?.value || window.location.origin));
+    if (ent === 'qr') sb().from('settings').select('value').eq('key', 'qr_base').maybeSingle().then(({ data }) => setBase(data?.value || PUB('')));
   }, [ent]); // eslint-disable-line react-hooks/exhaustive-deps
 
   const cell = (r, k) => {
@@ -273,7 +275,7 @@ function EntityList({ ent, toast }) {
           <tbody>{rows.map((r) => (
             <tr key={r.id}>
               {def.list.map(([k, l]) => <td key={k} data-l={l}>{cell(r, k)}</td>)}
-              <td className="r nowrap"><Link className="btn btn-sm" href={A(`${ent}/${r.id}`)}>Edytuj</Link> <a className="btn btn-sm btn-ghost" href={def.publicUrl(r)} target="_blank" rel="noreferrer" title="Zobacz na stronie">↗</a></td>
+              <td className="r nowrap"><Link className="btn btn-sm" href={A(`${ent}/${r.id}`)}>Edytuj</Link> <a className="btn btn-sm btn-ghost" href={PUB(def.publicUrl(r))} target="_blank" rel="noreferrer" title="Zobacz na stronie">↗</a></td>
             </tr>
           ))}</tbody>
         </table></div>
@@ -300,7 +302,7 @@ function EntityForm({ ent, id, toast }) {
     if (flatFields(def).some((f) => f.kind === 'partners')) sb().from('partners').select('id,name,published').order('sort').order('name').then(({ data }) => setPartners(data || []));
     if (ent === 'qr') {
       sb().from('books').select('id,title_pl').order('sort').then(({ data }) => setBooks(data || []));
-      sb().from('settings').select('value').eq('key', 'qr_base').maybeSingle().then(({ data }) => setQrBase(data?.value || window.location.origin));
+      sb().from('settings').select('value').eq('key', 'qr_base').maybeSingle().then(({ data }) => setQrBase(data?.value || PUB('')));
     }
   }, [ent, id]); // eslint-disable-line react-hooks/exhaustive-deps
   useEffect(() => {
@@ -369,7 +371,7 @@ function EntityForm({ ent, id, toast }) {
   return (
     <>
       <header className="ph ph-row"><div><p className="crumb"><Link href={A(ent)}>← {def.label}</Link></p><h1>{title}</h1></div>
-        {!isNew && <a className="btn btn-ghost" href={def.publicUrl(row)} target="_blank" rel="noreferrer">Zobacz na stronie ↗</a>}</header>
+        {!isNew && <a className="btn btn-ghost" href={PUB(def.publicUrl(row))} target="_blank" rel="noreferrer">Zobacz na stronie ↗</a>}</header>
       <form className="form" onSubmit={save}>
         <div className="form-grid">
           <div className="form-main">{def.fields.map(render)}</div>
@@ -411,7 +413,7 @@ function PagesScreen({ pkey, toast }) {
   return (
     <>
       <header className="ph ph-row"><div><p className="crumb"><Link href={A('pages')}>← Strony stałe</Link></p><h1>{label}</h1></div>
-        <a className="btn btn-ghost" href={pub} target="_blank" rel="noreferrer">Zobacz na stronie ↗</a></header>
+        <a className="btn btn-ghost" href={PUB(pub)} target="_blank" rel="noreferrer">Zobacz na stronie ↗</a></header>
       {note && <div className="callout callout-blue">{note}</div>}
       <form className="form" onSubmit={save}>
         <div className="pair"><div className="pair-col"><span className="flag">PL</span><Field f={{ name: 'title_pl', label: 'Tytuł — po polsku', kind: 'text' }} value={p.title_pl} set={set('title_pl')} err={err} /></div>
@@ -651,7 +653,7 @@ function Login() {
         {mode !== 'login' && <a href="#" onClick={(e) => { e.preventDefault(); setMode('login'); setMsg(null); }}>← Logowanie</a>}
         {mode === 'login' && <a href="#" onClick={(e) => { e.preventDefault(); setMode('reset'); setMsg(null); }}>Nie pamiętasz hasła?</a>}
       </p>
-      <p className="muted small"><a href="/">← wróć na stronę</a></p>
+      <p className="muted small"><a href={PUB()}>← wróć na stronę</a></p>
     </AuthBox>
   );
 }
@@ -760,7 +762,7 @@ export default function AdminApp({ path }) {
           {nav('help', '❓', 'Pomoc')}
         </nav>
         <div className="side-foot">
-          <a className="btn btn-sm" href="/" target="_blank" rel="noreferrer">Zobacz stronę ↗</a>
+          <a className="btn btn-sm" href={PUB()} target="_blank" rel="noreferrer">Zobacz stronę ↗</a>
           <p>{name || session.user.email} · <a href="#" onClick={async (e) => { e.preventDefault(); await sb().auth.signOut(); }}>Wyloguj</a></p>
         </div>
       </aside>

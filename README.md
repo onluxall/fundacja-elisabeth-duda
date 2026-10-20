@@ -34,3 +34,9 @@ npm install && npm run dev
 ## Contact form e-mail
 
 Messages are saved in the panel (*Wiadomości*) and also sent to **kontakt@fundacja-ed.com** through the Spacemail mailbox (SMTP `mail.spacemail.com:465`). Set in Vercel → Settings → Environment Variables: `SMTP_PASS` = the mailbox password (optional: `SMTP_USER`, `CONTACT_TO`). Without `SMTP_PASS` the form only saves to the panel. Reply-To is the sender, so "Reply" in the mailbox answers the visitor.
+
+## Admin panel — admin.fundacja-ed.com
+
+The panel is served at the root of `admin.fundacja-ed.com` (`middleware.js` rewrites to `/admin`). `fundacja-ed.com/admin` redirects there. `*.vercel.app/admin` and localhost keep `/admin` as a fallback. Admin responses are `noindex`, `no-store`, not embeddable, HTTPS-only.
+DNS (Spaceship): `CNAME admin → cname.vercel-dns.com`. Supabase Auth → Redirect URLs: add `https://admin.fundacja-ed.com/**`.
+Security lives in Supabase: RLS on every table, writes only for `public.admins`; the first-admin bootstrap RPC is revoked now that admins exist.
