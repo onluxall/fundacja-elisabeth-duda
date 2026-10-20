@@ -10,9 +10,12 @@
   "dependencies": {
     "@supabase/supabase-js": "2.117.2",
     "next": "15.5.27",
+    "nodemailer": "6.9.16",
     "qrcode-generator": "1.4.4",
     "react": "19.1.9",
     "react-dom": "19.1.9"
   },
-  "engines": { "node": ">=20" }
+  "engines": {
+    "node": ">=20"
+  }
 }

@@ -30,3 +30,7 @@ Set in Supabase → Authentication → URL Configuration: **Site URL** = `https:
 ```bash
 npm install && npm run dev
 ```
+
+## Contact form e-mail
+
+Messages are saved in the panel (*Wiadomości*) and also sent to **kontakt@fundacja-ed.com** through the Spacemail mailbox (SMTP `mail.spacemail.com:465`). Set in Vercel → Settings → Environment Variables: `SMTP_PASS` = the mailbox password (optional: `SMTP_USER`, `CONTACT_TO`). Without `SMTP_PASS` the form only saves to the panel. Reply-To is the sender, so "Reply" in the mailbox answers the visitor.
