@@ -451,7 +451,7 @@ function SettingsScreen({ toast }) {
               <div className="fld" key={k}><label htmlFor={`s_${k}`}>{l}</label>
                 {k.startsWith('seo_') ? <textarea id={`s_${k}`} rows={3} value={s[k] || ''} onChange={(e) => { setS({ ...s, [k]: e.target.value }); setDirty(true); }} />
                   : <input id={`s_${k}`} type="text" value={s[k] || ''} onChange={(e) => { setS({ ...s, [k]: e.target.value }); setDirty(true); }} />}
-                {k === 'qr_base' && <p className="help">Ustaw raz, przed drukiem: <code>https://fundacjaede.com</code>. Ten adres trafia do kodów QR w książkach.</p>}
+                {k === 'qr_base' && <p className="help">Ustaw raz, przed drukiem: <code>https://fundacja-ed.com</code>. Ten adres trafia do kodów QR w książkach.</p>}
               </div>
             ))}
           </div></fieldset>

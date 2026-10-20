@@ -32,6 +32,7 @@ export function BookCard({ b, i = 0, lang, hasQr, siteName }) {
           {hasQr && <p className="qr-flag"><span aria-hidden="true">▣</span> {t('qr_badge')}</p>}
         </div>
       </a>
+      {b.buy_url && <p className="poster-buy"><a className="btn btn-red" href={b.buy_url} target="_blank" rel="noopener">{t('buy')} ↗</a></p>}
     </article>
   );
 }

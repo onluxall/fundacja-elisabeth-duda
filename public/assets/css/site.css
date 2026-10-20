@@ -502,3 +502,35 @@ h1, h2, h3, .h-xl, .h-lg, .h-md { font-weight: 500; letter-spacing: 0; line-heig
 }
 .page-static .team { margin-top: 56px; }
 .page-static .team .h-lg { margin-bottom: .2em; }
+
+/* =====================================================================
+   Typography v3 (20 Oct 2026) — client feedback: letters still a bit
+   too big. Everything about 10–12% smaller; layout unchanged.
+   ===================================================================== */
+body { font-size: 16px; }
+.h-xl { font-size: clamp(2.3rem, 5.4vw, 4rem); }
+.h-lg { font-size: clamp(1.8rem, 3.5vw, 2.6rem); }
+.h-md { font-size: clamp(1.4rem, 2.6vw, 1.9rem); }
+h3 { font-size: 1.5rem; }
+.lead, .hero-text { font-size: 1.1rem; }
+.prose h2 { font-size: 1.9rem; }
+.prose h3 { font-size: 1.4rem; }
+.hero-title { font-size: clamp(2.8rem, 8vw, 6.2rem); }
+.hero-poster-cap { font-size: 1.3rem; }
+.foot-tag { font-size: 1.6rem; }
+.contact-list { font-size: 1.05rem; }
+.form input, .form textarea { font-size: 1rem; }
+.partner h3, .foot-h { font-size: 1.3rem; }
+.member h3 { font-size: 1.4rem; }
+@media (max-width: 960px) {
+  .menu > ul a { font-size: 1.7rem; }
+  .menu > ul .sub a { font-size: 1.3rem; }
+}
+@media (max-width: 560px) {
+  body { font-size: 15.5px; }
+  .poster-book .poster-body h3 { font-size: 1.3rem; }
+}
+
+/* "Kup książkę" button under each book card (only when a link is set) */
+.poster-buy { padding: 0 20px 22px; margin: 0; }
+@media (max-width: 560px) { .poster-buy { padding: 0 16px 16px; } }

@@ -1,4 +1,4 @@
-# Fundacja Elisabeth Duda — fundacjaede.com
+# Fundacja Elisabeth Duda — fundacja-ed.com
 
 Next.js 15 (App Router) on Vercel + Supabase (Postgres, Storage, Auth). PL at `/`, FR at `/fr`. Street-art paste-up design.
 
@@ -19,7 +19,7 @@ Project `fundacja-elisabeth-duda` (eu-central-1). All tables have RLS: public re
 **First admin:** open `/admin` → *Utwórz konto* → confirm the e-mail → log in → enter the setup key (stored in `public.private_config`, not readable through the API). Works only while `admins` is empty.
 **More people:** they create an account at `/admin`; an admin approves them in *Konta i hasło*.
 
-Set in Supabase → Authentication → URL Configuration: **Site URL** = `https://fundacjaede.com`, and add `https://fundacjaede.com/admin` + the Vercel preview URL to **Redirect URLs** (needed for e-mail confirmation and password reset links).
+Set in Supabase → Authentication → URL Configuration: **Site URL** = `https://fundacja-ed.com`, and add `https://fundacja-ed.com/admin` + the Vercel preview URL to **Redirect URLs** (needed for e-mail confirmation and password reset links).
 
 ## Env (optional — public defaults are in `lib/config.js`)
 
