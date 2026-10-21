@@ -193,13 +193,6 @@ export async function Book({ lang, r }) {
         <section className="band band-blue"><div className="wrap sec">
           <SectionHead title={t('qr_materials')} tag="QR" />
           <p className="lead">{t('qr_intro')}</p>
-          <ol className="qr-list">
-            {qrs.map((q, i) => (
-              <li key={q.code}><a href={`/qr/${encodeURIComponent(q.code)}?lang=${lang}&nocount=1`}>
-                <span className="qr-num">{String(i + 1).padStart(2, '0')}</span><span>{tr(q, 'title', lang)}</span><span className="qr-go" aria-hidden="true">▶</span>
-              </a></li>
-            ))}
-          </ol>
         </div></section>
       )}
       <ItemPartners ids={b.partner_ids} lang={lang} />
@@ -371,24 +364,27 @@ export function QrBody({ lang, q, book, siblings }) {
   const t = tFor(lang);
   const idx = siblings.findIndex((x) => x.code === q.code);
   const media = mediaInfo(q[`media_${lang}`] || q[`media_${lang === 'pl' ? 'fr' : 'pl'}`]);
-  const link = (c) => `/qr/${encodeURIComponent(c)}?lang=${lang}&nocount=1`;
+  const self = (l) => `/qr/${encodeURIComponent(q.code)}?lang=${l}&nocount=1`;
+  const bilingual = q.media_pl && q.media_fr && q.media_pl !== q.media_fr;
   return (
     <article className="wrap sec narrow qr-page" lang={lang}>
       {book && <p className="kicker">{t('from_book')}: <a href={url('books', lang, book.slug)}>{tr(book, 'title', lang)}</a></p>}
       <p className="qr-stamp"><span>QR</span>{idx >= 0 ? String(idx + 1).padStart(2, '0') : q.code}</p>
-      <h1 className="h-xl">{tr(q, 'title', lang)}</h1>
+      <div className="qr-head">
+        <h1 className="h-xl">{tr(q, 'title', lang)}</h1>
+        {bilingual && (
+          <nav className="qr-lang" aria-label={lang === 'fr' ? 'Version' : 'Wersja'}>
+            <a href={self('pl')} lang="pl" aria-current={lang === 'pl' ? 'true' : undefined}>PL</a>
+            <a href={self('fr')} lang="fr" aria-current={lang === 'fr' ? 'true' : undefined}>FR</a>
+          </nav>
+        )}
+      </div>
       {media?.kind === 'iframe' && <div className="embed"><iframe src={media.src} title={tr(q, 'title', lang)} loading="lazy" allow="accelerometer; encrypted-media; picture-in-picture; fullscreen" allowFullScreen></iframe></div>}
       {media?.kind === 'audio' && <audio className="audio" controls preload="none" src={media.src}></audio>}
       {media?.kind === 'video' && <div className="embed"><video controls preload="metadata" src={media.src}></video></div>}
       {media?.kind === 'link' && <p><a className="btn" href={media.src} target="_blank" rel="noopener">▶ {tr(q, 'title', lang)}</a></p>}
       {q.image && <Pasteup src={mediaUrl(q.image)} />}
       <Prose src={tr(q, 'body', lang)} />
-      {idx >= 0 && siblings.length > 1 && (
-        <nav className="qr-nav">
-          {idx > 0 ? <a className="btn btn-ghost" href={link(siblings[idx - 1].code)}>← {tr(siblings[idx - 1], 'title', lang)}</a> : <span></span>}
-          {idx < siblings.length - 1 && <a className="btn btn-ghost" href={link(siblings[idx + 1].code)}>{tr(siblings[idx + 1], 'title', lang)} →</a>}
-        </nav>
-      )}
     </article>
   );
 }

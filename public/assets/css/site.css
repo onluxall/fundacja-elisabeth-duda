@@ -534,3 +534,12 @@ h3 { font-size: 1.5rem; }
 /* "Kup książkę" button under each book card (only when a link is set) */
 .poster-buy { padding: 0 20px 22px; margin: 0; }
 @media (max-width: 560px) { .poster-buy { padding: 0 16px 16px; } }
+
+/* QR page: PL / FR switch next to the title */
+.qr-head { display: flex; align-items: flex-start; justify-content: space-between; gap: 18px; flex-wrap: wrap; }
+.qr-head .h-xl { margin-right: auto; }
+.qr-lang { display: inline-flex; border: 2px solid var(--ink); margin-top: .5em; flex: none; }
+.qr-lang a { font: 600 .8rem/1 var(--f-label, var(--f-ui)); letter-spacing: .12em; padding: 9px 13px 8px; color: var(--ink); text-decoration: none; background: var(--paper); }
+.qr-lang a + a { border-left: 2px solid var(--ink); }
+.qr-lang a[aria-current] { background: var(--ink); color: #fff; }
+.qr-lang a:not([aria-current]):hover { background: var(--red); color: #fff; }
