@@ -546,3 +546,28 @@ h3 { font-size: 1.5rem; }
 
 /* Real covers are 3:4 (Mania) — show them uncropped on book cards */
 .poster-book img.cover { aspect-ratio: 3 / 4; }
+
+/* ---------- About page v2: readable intro + team without empty stretched cards ---------- */
+.page-static .prose > p:first-child { font-size: 1.15rem; color: var(--ink); }
+.page-static .prose h2 { margin-top: 1.4em; }
+.page-static .prose ul { padding-left: 1.1em; }
+.page-static .prose li { margin: .35em 0; }
+.team-list { grid-template-columns: repeat(2, minmax(0, 1fr)); align-items: start; gap: 20px; }
+.member { grid-template-columns: 64px 1fr; align-items: start; gap: 18px; padding: 22px 24px; }
+.member .member-photo { width: 64px; height: 64px; }
+.member-initials { font-size: 1.5rem; }
+.member h3 { font-size: 1.35rem; margin: 0 0 .1em; }
+.member .prose, .member p { font-size: .98rem; line-height: 1.6; }
+.member .prose p { margin: .6em 0 0; }
+.member > div > p:last-child { margin-bottom: 0; }
+.member-lead { grid-column: 1 / -1; grid-template-columns: 120px 1fr; gap: 28px; padding: 28px 30px; }
+.member-lead .member-photo { width: 120px; height: 120px; }
+.member-lead .member-initials { font-size: 2.6rem; }
+.member-lead h3 { font-size: 1.7rem; }
+.member-lead .prose { max-width: 62ch; }
+@media (max-width: 700px) {
+  .team-list { grid-template-columns: 1fr; }
+  .member, .member-lead { grid-template-columns: 56px 1fr; gap: 14px; padding: 18px; }
+  .member .member-photo, .member-lead .member-photo { width: 56px; height: 56px; }
+  .member-initials, .member-lead .member-initials { font-size: 1.3rem; }
+}

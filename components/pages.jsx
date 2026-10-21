@@ -112,8 +112,8 @@ async function Team({ lang }) {
     <div className="team">
       <h2 className="h-lg">{t('team')}</h2>
       <ul className="team-list">
-        {team.map((m) => (
-          <li key={m.id} className="member">
+        {team.map((m, i) => (
+          <li key={m.id} className={i === 0 ? 'member member-lead' : 'member'}>
             {m.photo ? <img className="member-photo" src={mediaUrl(m.photo)} alt="" loading="lazy" /> : <span className="member-photo member-initials" aria-hidden="true">{initials(m.name)}</span>}
             <div>
               <p className="member-role">{tr(m, 'role', lang)}</p>
@@ -365,21 +365,11 @@ export function QrBody({ lang, q, book, siblings }) {
   const t = tFor(lang);
   const idx = siblings.findIndex((x) => x.code === q.code);
   const media = mediaInfo(q[`media_${lang}`] || q[`media_${lang === 'pl' ? 'fr' : 'pl'}`]);
-  const self = (l) => `/qr/${encodeURIComponent(q.code)}?lang=${l}&nocount=1`;
-  const bilingual = q.media_pl && q.media_fr && q.media_pl !== q.media_fr;
   return (
     <article className="wrap sec narrow qr-page" lang={lang}>
       {book && <p className="kicker">{t('from_book')}: <a href={url('books', lang, book.slug)}>{tr(book, 'title', lang)}</a></p>}
       <p className="qr-stamp"><span>QR</span>{idx >= 0 ? String(idx + 1).padStart(2, '0') : q.code}</p>
-      <div className="qr-head">
-        <h1 className="h-xl">{tr(q, 'title', lang)}</h1>
-        {bilingual && (
-          <nav className="qr-lang" aria-label={lang === 'fr' ? 'Version' : 'Wersja'}>
-            <a href={self('pl')} lang="pl" aria-current={lang === 'pl' ? 'true' : undefined}>PL</a>
-            <a href={self('fr')} lang="fr" aria-current={lang === 'fr' ? 'true' : undefined}>FR</a>
-          </nav>
-        )}
-      </div>
+      <h1 className="h-xl">{tr(q, 'title', lang)}</h1>
       {media?.kind === 'iframe' && <div className="embed"><iframe src={media.src} title={tr(q, 'title', lang)} loading="lazy" allow="accelerometer; encrypted-media; picture-in-picture; fullscreen" allowFullScreen></iframe></div>}
       {media?.kind === 'audio' && <audio className="audio" controls preload="none" src={media.src}></audio>}
       {media?.kind === 'video' && <div className="embed"><video controls preload="metadata" src={media.src}></video></div>}
