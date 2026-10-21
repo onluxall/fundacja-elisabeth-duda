@@ -580,3 +580,12 @@ h3 { font-size: 1.5rem; }
 .member-lead { grid-template-columns: 120px 1fr; gap: 28px; padding: 28px 30px; }
 .member-lead .member-photo { width: 120px; height: 120px; }
 @media (max-width: 700px) { .member, .member-lead { grid-template-columns: 56px 1fr; gap: 14px; padding: 18px; } .member .member-photo, .member-lead .member-photo { width: 56px; height: 56px; } }
+
+/* PL/FR switch always visible in the top-right on phones (QR scans happen on mobile) */
+.lang-switch-bar { display: none; }
+@media (max-width: 960px) {
+  .lang-switch-bar { display: inline-flex; margin-left: auto; }
+  .lang-switch-bar a { font-size: .82rem; padding: 10px 12px; }
+  .menu .lang-switch { display: none; }
+}
+.lang-switch a { text-decoration: none; }

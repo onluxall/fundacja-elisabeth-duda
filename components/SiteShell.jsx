@@ -33,6 +33,10 @@ export default async function SiteShell({ lang, nav = '', alt, children }) {
           <a className="brand" href={url('home', lang)} aria-label={s.site_name}>
             <img src="/assets/img/logo-color.svg" alt={s.site_name} width="230" height="50" />
           </a>
+          <div className="lang-switch lang-switch-bar">
+            <a href={alt.pl} hrefLang="pl" lang="pl" aria-current={lang === 'pl' ? 'true' : undefined}>PL</a>
+            <a href={alt.fr} hrefLang="fr" lang="fr" aria-current={lang === 'fr' ? 'true' : undefined}>FR</a>
+          </div>
           <button className="menu-btn" type="button" aria-expanded="false" aria-controls="menu">
             <span className="menu-ico" aria-hidden="true"></span><span className="sr">{t('menu')}</span>
           </button>
