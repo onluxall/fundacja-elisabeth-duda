@@ -571,3 +571,12 @@ h3 { font-size: 1.5rem; }
   .member .member-photo, .member-lead .member-photo { width: 56px; height: 56px; }
   .member-initials, .member-lead .member-initials { font-size: 1.3rem; }
 }
+
+/* Team: one member per row — cards line up regardless of bio length */
+.team-list { grid-template-columns: 1fr; gap: 16px; }
+.member { grid-template-columns: 84px 1fr; gap: 24px; padding: 24px 28px; }
+.member .member-photo { width: 84px; height: 84px; }
+.member .prose { max-width: 62ch; }
+.member-lead { grid-template-columns: 120px 1fr; gap: 28px; padding: 28px 30px; }
+.member-lead .member-photo { width: 120px; height: 120px; }
+@media (max-width: 700px) { .member, .member-lead { grid-template-columns: 56px 1fr; gap: 14px; padding: 18px; } .member .member-photo, .member-lead .member-photo { width: 56px; height: 56px; } }
