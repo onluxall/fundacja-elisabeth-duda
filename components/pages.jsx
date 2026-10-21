@@ -169,7 +169,8 @@ export async function Book({ lang, r }) {
   if (b.translator) schema.translator = { '@type': 'Person', name: b.translator };
   if (b.publisher) schema.publisher = { '@type': 'Organization', name: b.publisher };
   if (b.isbn) schema.isbn = b.isbn;
-  if (b.cover) schema.image = mediaUrl(b.cover);
+  const coverImg = (lang === 'fr' && b.cover_fr) || b.cover;
+  if (coverImg) schema.image = mediaUrl(coverImg);
   if (b.buy_url) schema.offers = { '@type': 'Offer', url: b.buy_url };
   return (
     <>

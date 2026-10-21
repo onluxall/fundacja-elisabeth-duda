@@ -5,7 +5,8 @@ export const Html = ({ html, className }) => <div className={className} dangerou
 export const Prose = ({ src }) => <Html className="prose" html={md(src)} />;
 
 export function BookCover({ b, lang, cls = '', siteName = '' }) {
-  if (b.cover) return <img className={`cover ${cls}`} src={mediaUrl(b.cover)} alt={tr(b, 'title', lang)} loading="lazy" />;
+  const cover = (lang === 'fr' && b.cover_fr) || b.cover || b.cover_fr;
+  if (cover) return <img className={`cover ${cls}`} src={mediaUrl(cover)} alt={tr(b, 'title', lang)} loading="lazy" />;
   return (
     <div className={`cover cover-poster ${cls}`} role="img" aria-label={tr(b, 'title', lang)}>
       <img className="cover-pen" src="/assets/img/pen-white.svg" alt="" />

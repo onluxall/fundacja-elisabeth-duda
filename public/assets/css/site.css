@@ -543,3 +543,6 @@ h3 { font-size: 1.5rem; }
 .qr-lang a + a { border-left: 2px solid var(--ink); }
 .qr-lang a[aria-current] { background: var(--ink); color: #fff; }
 .qr-lang a:not([aria-current]):hover { background: var(--red); color: #fff; }
+
+/* Real covers are 3:4 (Mania) — show them uncropped on book cards */
+.poster-book img.cover { aspect-ratio: 3 / 4; }
