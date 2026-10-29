@@ -163,12 +163,15 @@ export async function Book({ lang, r }) {
   const t = tFor(lang);
   const b = r.data;
   const [s, qrs] = await Promise.all([C.getSettings(), C.getBookQrs(b.id)]);
-  const meta = ['author', 'translator', 'publisher', 'year', 'isbn'].filter((f) => b[f]);
+  const isbn = (lang === 'fr' && b.isbn_fr) || b.isbn || '';
+  const val = (f) => (f === 'isbn' ? isbn : b[f]);
+  const meta = ['author', 'translator', 'publisher', 'year', 'isbn'].filter((f) => val(f));
   const schema = { '@type': 'Book', name: tr(b, 'title', lang), inLanguage: ['pl', 'fr'], url: SITE_URL + url('books', lang, b.slug), sponsor: { '@id': `${SITE_URL}/#org` } };
   if (b.author) schema.author = { '@type': 'Person', name: b.author };
   if (b.translator) schema.translator = { '@type': 'Person', name: b.translator };
   if (b.publisher) schema.publisher = { '@type': 'Organization', name: b.publisher };
-  if (b.isbn) schema.isbn = b.isbn;
+  const isbnNum = (isbn.match(/97[89][-\d]{10,}/) || [])[0];
+  if (isbnNum) schema.isbn = isbnNum;
   const coverImg = (lang === 'fr' && b.cover_fr) || b.cover;
   if (coverImg) schema.image = mediaUrl(coverImg);
   if (b.buy_url) schema.offers = { '@type': 'Offer', url: b.buy_url };
@@ -185,7 +188,7 @@ export async function Book({ lang, r }) {
             <h1 className="h-xl">{tr(b, 'title', lang)}</h1>
             {tr(b, 'subtitle', lang) && <p className="lead">{tr(b, 'subtitle', lang)}</p>}
             <Prose src={tr(b, 'body', lang)} />
-            {meta.length > 0 && <dl className="meta">{meta.map((f) => <div key={f}><dt>{t(f)}</dt><dd>{b[f]}</dd></div>)}</dl>}
+            {meta.length > 0 && <dl className="meta">{meta.map((f) => <div key={f}><dt>{t(f)}</dt><dd>{f === 'isbn' ? val(f).split(/\s*[;\n]\s*/).filter(Boolean).map((x, j) => <span key={j} style={{ display: 'block' }}>{x}</span>) : val(f)}</dd></div>)}</dl>}
             {b.buy_url && <p><a className="btn btn-red btn-lg" href={b.buy_url} target="_blank" rel="noopener">{t('buy')} ↗</a></p>}
           </div>
         </div>

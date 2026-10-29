@@ -16,7 +16,7 @@ export const ENTITIES = {
       { name: 'subtitle', label: 'Podtytuł', kind: 'text', pair: true },
       { name: 'slug', label: 'Adres (slug)', kind: 'slug', from: 'title_pl', help: 'Część adresu, np. /ksiazki/mania-listy-ze-szczuk. Zostaw puste — utworzy się z tytułu.' },
       { row: [{ name: 'author', label: 'Autor', kind: 'text' }, { name: 'translator', label: 'Tłumaczenie', kind: 'text' }, { name: 'publisher', label: 'Wydawca', kind: 'text' }] },
-      { row: [{ name: 'year', label: 'Rok wydania', kind: 'text' }, { name: 'isbn', label: 'ISBN', kind: 'text' }] },
+      { row: [{ name: 'year', label: 'Rok wydania', kind: 'text' }, { name: 'isbn', label: 'ISBN (PL)', kind: 'text', help: 'Kilka numerów oddziel średnikiem ;' }, { name: 'isbn_fr', label: 'ISBN (FR)', kind: 'text', help: 'Wydanie francuskie. Puste = strona FR pokaże ISBN PL.' }] },
       { name: 'badge', label: 'Naklejka na okładce', kind: 'text', pair: true, help: 'np. „Wkrótce”, „Nowość” — zostaw puste, aby ukryć.' },
       { name: 'body', label: 'Opis', kind: 'textarea', pair: true, help: MD_HELP },
       { name: 'cover', label: 'Okładka (PL)', kind: 'image', folder: 'covers', help: 'JPG/PNG/WebP, najlepiej pionowa 3:4 lub 2:3. Bez okładki wyświetla się graficzny plakat z tytułem.' },
