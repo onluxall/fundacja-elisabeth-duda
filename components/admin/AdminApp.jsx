@@ -256,6 +256,7 @@ function EntityList({ ent, toast }) {
     const v = r[k];
     if (['cover', 'image', 'logo', 'photo'].includes(k)) return v ? <img className="thumb" src={mediaUrl(v)} alt="" /> : <span className="thumb thumb-0" />;
     if (k === 'published') return v ? <span className="ok">● tak</span> : <span className="no">○ ukryte</span>;
+    if (k === 'edition') return { pl: 'Wersja polska', fr: 'Wersja francuska' }[v] || v;
     if (k === 'category') return { show: 'Przedstawienie', meeting: 'Spotkanie', other: 'Inne' }[v] || v;
     if (k === 'starts_at' || k === 'date') return v ? fmtDate(v, 'pl') : '—';
     if (k === 'book_id') return books[v] || '—';

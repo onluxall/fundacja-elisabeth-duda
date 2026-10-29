@@ -93,13 +93,13 @@ export const ENTITIES = {
   },
   qr: {
     label: 'Kody QR', one: 'kod QR', icon: '▣',
-    order: [['book_id', true], ['sort', true], ['id', true]],
-    list: [['code', 'Kod'], ['title_pl', 'Tytuł'], ['book_id', 'Książka'], ['scans', 'Skany'], ['published', 'Aktywny']],
+    order: [['book_id', true], ['edition', false], ['sort', true], ['id', true]],
+    list: [['code', 'Kod'], ['title_pl', 'Tytuł'], ['book_id', 'Książka'], ['edition', 'Katalog'], ['scans', 'Skany'], ['published', 'Aktywny']],
     publicUrl: (r) => `/qr/${r.code}?nocount=1`,
-    defaults: { published: true, sort: 0 },
+    defaults: { published: true, sort: 0, edition: 'pl' },
     fields: [
       { name: 'code', label: 'Kod (część adresu)', kind: 'code', from: 'title_pl', help: 'Adres drukowany w książce: /qr/kod. Krótko, bez polskich znaków, np. mania-01. Po wydrukowaniu książki NIE zmieniaj kodu!' },
-      { name: 'book_id', label: 'Książka', kind: 'book' },
+      { row: [{ name: 'book_id', label: 'Książka', kind: 'book' }, { name: 'edition', label: 'Katalog (wydanie)', kind: 'select', options: { pl: 'Wersja polska', fr: 'Wersja francuska' }, help: 'Kod otwiera się domyślnie w języku wydania. Numeracja kodów liczy się osobno w każdym katalogu.' }] },
       { name: 'title', label: 'Tytuł materiału', kind: 'text', pair: true, required: true },
       { name: 'media', label: 'Nagranie / film', kind: 'media', pair: true, folder: 'qr', help: 'Link do YouTube lub Vimeo albo wgrany plik MP3 / MP4 / PDF. Wersja FR jest opcjonalna — bez niej pokaże się wersja PL.' },
       { name: 'image', label: 'Zdjęcie', kind: 'image', folder: 'qr' },
