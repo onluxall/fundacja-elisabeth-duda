@@ -17,7 +17,8 @@ Next.js 15 (App Router) on Vercel + Supabase (Postgres, Storage, Auth). PL at `/
 Project `fundacja-elisabeth-duda` (eu-central-1). All tables have RLS: public read of published rows, writes only for users in `public.admins`. Media in the public `media` bucket.
 
 **First admin:** open `/admin` → *Utwórz konto* → confirm the e-mail → log in → enter the setup key (stored in `public.private_config`, not readable through the API). Works only while `admins` is empty.
-**More people:** they create an account at `/admin`; an admin approves them in *Konta i hasło*.
+**Main account:** `kontakt@fundacja-ed.com` (`admins.is_owner`). Only it can add sub-accounts (ready to use, no e-mail confirmation), approve/revoke access and permanently delete accounts in *Konta i hasło* — enforced by RLS and the `create_account` / `delete_account` RPCs (`supabase/migrations/20261102_owner_account_manages_sub_accounts.sql`). Sub-accounts edit content and change their own password.
+**More people:** the main account adds them in *Konta i hasło*, or they sign up at `/admin` and the main account clicks *Nadaj dostęp*.
 
 Set in Supabase → Authentication → URL Configuration: **Site URL** = `https://fundacja-ed.com`, and add `https://fundacja-ed.com/admin` + the Vercel preview URL to **Redirect URLs** (needed for e-mail confirmation and password reset links).
 
