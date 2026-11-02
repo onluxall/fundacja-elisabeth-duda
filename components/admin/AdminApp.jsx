@@ -505,8 +505,11 @@ function MessagesScreen({ mid, toast, onRead }) {
 function UsersScreen({ me, toast }) {
   const [accounts, setAccounts] = useState([]);
   const [pw, setPw] = useState('');
+  const [nf, setNf] = useState({ name: '', email: '', pass: '' });
+  const [busy, setBusy] = useState(false);
   const load = useCallback(() => sb().rpc('list_accounts').then(({ data }) => setAccounts(data || [])), []);
   useEffect(() => { load(); }, [load]);
+  const owner = accounts.some((a) => a.user_id === me && a.is_owner);
   const changePw = async (e) => {
     e.preventDefault();
     if (pw.length < 10) return toast('Hasło musi mieć co najmniej 10 znaków.', 'err');
@@ -514,11 +517,36 @@ function UsersScreen({ me, toast }) {
     if (error) return toast(error.message, 'err');
     setPw(''); toast('Hasło zmienione ✔');
   };
+  const create = async (e) => {
+    e.preventDefault();
+    if (nf.pass.length < 10) return toast('Hasło musi mieć co najmniej 10 znaków.', 'err');
+    setBusy(true);
+    const { error } = await sb().rpc('create_account', { p_email: nf.email.trim(), p_password: nf.pass, p_name: nf.name.trim() });
+    setBusy(false);
+    if (error) return toast(error.message, 'err');
+    toast(`Dodano konto ${nf.email.trim()} ✔ — przekaż tej osobie e-mail i hasło.`);
+    setNf({ name: '', email: '', pass: '' }); load();
+  };
   const approve = async (a) => { const { error } = await sb().from('admins').insert({ user_id: a.user_id, name: a.name || '' }); if (error) toast(error.message, 'err'); else { toast('Dostęp nadany ✔'); load(); } };
   const revoke = async (a) => { if (!confirm(`Odebrać dostęp: ${a.email}?`)) return; const { error } = await sb().from('admins').delete().eq('user_id', a.user_id); if (error) toast(error.message, 'err'); else { toast('Dostęp odebrany.'); load(); } };
+  const remove = async (a) => {
+    if (!confirm(`Usunąć konto ${a.email} na zawsze? Tej operacji nie można cofnąć.`)) return;
+    const { error } = await sb().rpc('delete_account', { p_user: a.user_id });
+    if (error) toast(error.message, 'err'); else { toast('Konto usunięte.'); load(); }
+  };
+  const actions = (a) => {
+    if (a.user_id === me) return <span className="muted">to Ty</span>;
+    if (a.is_owner) return <span className="muted">konto główne</span>;
+    if (!owner) return a.is_admin ? <span className="muted">ma dostęp</span> : <span className="muted">czeka na dostęp</span>;
+    return (<span style={{ display: 'inline-flex', gap: 6, flexWrap: 'wrap', justifyContent: 'flex-end' }}>
+      {a.is_admin ? <button className="btn btn-sm" onClick={() => revoke(a)}>Odbierz dostęp</button> : <button className="btn btn-sm btn-red" onClick={() => approve(a)}>Nadaj dostęp</button>}
+      <button className="btn btn-sm btn-danger" onClick={() => remove(a)}>Usuń konto</button>
+    </span>);
+  };
   return (
     <>
-      <header className="ph"><h1>👤 Konta i hasło</h1></header>
+      <header className="ph"><h1>👤 Konta i hasło</h1>
+        <p className="muted">{owner ? 'Jesteś na koncie głównym — możesz dodawać i usuwać podkonta.' : 'Kontami zarządza konto główne (kontakt@fundacja-ed.com).'}</p></header>
       <div className="cols">
         <section className="card"><h2>Zmień swoje hasło</h2>
           <form className="form" onSubmit={changePw}>
@@ -527,11 +555,20 @@ function UsersScreen({ me, toast }) {
           </form></section>
         <section className="card"><h2>Osoby z dostępem</h2>
           <table className="tbl"><tbody>{accounts.map((a) => (
-            <tr key={a.user_id}><td><b>{a.name || '—'}</b><br /><span className="muted">{a.email}</span></td>
-              <td className="r">{a.user_id === me ? <span className="muted">to Ty</span> : a.is_admin ? <button className="btn btn-sm btn-danger" onClick={() => revoke(a)}>Odbierz dostęp</button> : <button className="btn btn-sm btn-red" onClick={() => approve(a)}>Nadaj dostęp</button>}</td></tr>
+            <tr key={a.user_id}><td><b>{a.name || '—'}</b>{a.is_owner && <> <span className="pill">główne</span></>}<br /><span className="muted">{a.email}</span></td>
+              <td className="r">{actions(a)}</td></tr>
           ))}</tbody></table>
-          <h3>Jak dodać osobę?</h3>
-          <p className="small">Nowe konto zakłada opiekun techniczny strony (tapFunnel). Gdy konto zostanie utworzone, pojawi się tutaj — kliknij <b>Nadaj dostęp</b>.</p>
+          {owner ? (<>
+            <h3>Dodaj podkonto</h3>
+            <form className="form" onSubmit={create}>
+              <div className="row row-2">
+                <div className="fld"><label htmlFor="nu-name">Imię</label><input id="nu-name" value={nf.name} onChange={(e) => setNf({ ...nf, name: e.target.value })} /></div>
+                <div className="fld"><label htmlFor="nu-email">E-mail</label><input id="nu-email" type="email" required value={nf.email} onChange={(e) => setNf({ ...nf, email: e.target.value })} autoComplete="off" /></div>
+              </div>
+              <div className="fld"><label htmlFor="nu-pass">Hasło startowe (min. 10 znaków)</label><input id="nu-pass" type="text" required minLength={10} value={nf.pass} onChange={(e) => setNf({ ...nf, pass: e.target.value })} autoComplete="off" /></div>
+              <p className="small muted">Konto działa od razu. Podkonto edytuje treści i zmienia własne hasło — nie może dodawać ani usuwać kont.</p>
+              <button className="btn" disabled={busy}>{busy ? 'Dodawanie…' : 'Dodaj'}</button>
+            </form></>) : null}
         </section>
       </div>
     </>
