@@ -184,3 +184,9 @@ hr { border: 0; border-top: 1px solid var(--line); width: 100%; }
 .don-qr h2 { font-size: 1rem; margin: 0; }
 .don-lang { align-items: center; }
 .err-txt { color: var(--red); font-weight: 600; }
+
+/* partner categories & projects */
+.roles { display: grid; gap: 8px; }
+.role-row { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; }
+.role-row select { width: auto; min-width: 200px; flex: 1 1 200px; }
+.role-row select:first-child { flex: 0 1 200px; }

@@ -18,6 +18,8 @@ export function Socials({ s, lang, cls = '' }) {
  * Header + footer around every public page.
  * @param alt {pl, fr} — the same page in the other language (for the switcher)
  */
+const SUBS = { about: ['partners'], events: ['shows', 'meetings'] };
+
 export default async function SiteShell({ lang, nav = '', alt, children }) {
   const s = await getSettings();
   const t = tFor(lang);
@@ -42,12 +44,12 @@ export default async function SiteShell({ lang, nav = '', alt, children }) {
           </button>
           <nav className="menu" id="menu" aria-label="Menu">
             <ul>
-              {items.map((k) => k === 'events' ? (
-                <li key={k} className={`has-sub${nav === 'events' ? ' is-active' : ''}`}>
-                  <a href={url('events', lang)} aria-current={nav === 'events' ? 'page' : undefined}>{t('events')}</a>
-                  <button className="sub-toggle" type="button" aria-expanded="false" aria-label={t('events')}>▾</button>
+              {items.map((k) => SUBS[k] ? (
+                <li key={k} className={`has-sub${nav === k ? ' is-active' : ''}`}>
+                  <a href={url(k, lang)} aria-current={nav === k ? 'page' : undefined}>{t(k)}</a>
+                  <button className="sub-toggle" type="button" aria-expanded="false" aria-label={t(k)}>▾</button>
                   <ul className="sub">
-                    {['shows', 'meetings'].map((x) => <li key={x}><a href={url(x, lang)}>{t(x)}</a></li>)}
+                    {SUBS[k].map((x) => <li key={x}><a href={url(x, lang)}>{t(x === 'partners' ? 'our_partners' : x)}</a></li>)}
                   </ul>
                 </li>
               ) : (
@@ -80,7 +82,7 @@ export default async function SiteShell({ lang, nav = '', alt, children }) {
           </div>
           <div>
             <h2 className="foot-h">{s.site_name}</h2>
-            <ul className="foot-links">{['about', 'books', 'news', 'support', 'contact'].map((x) => <li key={x}><a href={url(x, lang)}>{t(x)}</a></li>)}</ul>
+            <ul className="foot-links">{['about', 'partners', 'books', 'news', 'support', 'contact'].map((x) => <li key={x}><a href={url(x, lang)}>{t(x === 'partners' ? 'our_partners' : x)}</a></li>)}</ul>
             <p className="foot-legal">
               {s.krs && <>KRS {s.krs}<br /></>}
               {s.nip && <>NIP {s.nip}<br /></>}

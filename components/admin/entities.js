@@ -1,5 +1,5 @@
 // Content types edited in the panel. Each screen (list + form) is generated from these definitions.
-// Field kinds: text, textarea (markdown), url, date, datetime, number, checkbox, select, image, media, book, partners, slug, code
+// Field kinds: text, textarea (markdown), url, date, datetime, number, checkbox, select, image, media, book, partners, roles, slug, code
 // pair: true → the field exists in PL and FR (name_pl / name_fr), shown side by side.
 
 export const MD_HELP = 'Formatowanie: **pogrubienie**, *kursywa*, ## Nagłówek, - lista, [tekst linku](https://…), > cytat. Pusta linia = nowy akapit.';
@@ -65,15 +65,28 @@ export const ENTITIES = {
   partners: {
     label: 'Partnerzy', one: 'partnera', icon: '🤝',
     order: [['sort', true], ['name', true]],
-    list: [['logo', ''], ['name', 'Nazwa'], ['url', 'Strona'], ['published', 'Widoczny']],
-    publicUrl: () => '/ksiazki',
+    list: [['logo', ''], ['name', 'Nazwa'], ['roles', 'Kategorie i projekty'], ['published', 'Widoczny']],
+    publicUrl: () => '/partnerzy',
     defaults: { published: true, sort: 0 },
     fields: [
       { name: 'name', label: 'Nazwa', kind: 'text', required: true },
-      { name: 'url', label: 'Strona internetowa', kind: 'url' },
-      { name: 'logo', label: 'Logo', kind: 'image', folder: 'partners' },
+      { name: 'url', label: 'Strona internetowa', kind: 'url', help: 'Logo na stronie „Nasi Partnerzy” prowadzi pod ten adres.' },
+      { name: 'logo', label: 'Logo', kind: 'image', folder: 'partners', help: 'Najlepiej SVG lub PNG na przezroczystym tle. Logo pokazuje się w oryginalnych proporcjach.' },
+      { name: 'roles', label: 'Kategorie i projekty', kind: 'roles', help: 'W jakiej kategorii i przy jakim projekcie partner ma się pojawić na stronie „Nasi Partnerzy”. Ten sam partner może mieć kilka wierszy, np. Patronat przy „Mania…” i Partner przy projekcie o Miłoszu.' },
       { name: 'body', label: 'Krótki opis', kind: 'textarea', pair: true, help: MD_HELP },
-      { row: [{ name: 'sort', label: 'Kolejność', kind: 'number' }, { name: 'published', label: 'Widoczny na stronie', kind: 'checkbox' }] },
+      { row: [{ name: 'sort', label: 'Kolejność (mniejsza = wyżej)', kind: 'number' }, { name: 'published', label: 'Widoczny na stronie', kind: 'checkbox' }] },
+    ],
+  },
+  projects: {
+    label: 'Projekty', one: 'projekt', icon: '🗂️',
+    order: [['sort', true], ['id', true]],
+    list: [['name_pl', 'Nazwa'], ['book_id', 'Książka'], ['published', 'Widoczny']],
+    publicUrl: (r) => `/partnerzy?projekt=${r.slug}`,
+    defaults: { published: true, sort: 0 },
+    fields: [
+      { name: 'name', label: 'Nazwa projektu', kind: 'text', pair: true, required: true, help: 'Nazwa przycisku na stronie „Nasi Partnerzy”, np. „Mania – Listy ze Szczuk”.' },
+      { name: 'slug', label: 'Adres (slug)', kind: 'slug', from: 'name_pl', help: 'Zostaw puste — utworzy się z nazwy.' },
+      { row: [{ name: 'book_id', label: 'Powiązana książka (opcjonalnie)', kind: 'book' }, { name: 'sort', label: 'Kolejność (mniejsza = wyżej)', kind: 'number' }, { name: 'published', label: 'Widoczny na stronie', kind: 'checkbox' }] },
     ],
   },
   team: {
@@ -114,6 +127,7 @@ export const ENTITIES = {
 export function flatFields(def) {
   const out = [];
   for (const f of def.fields) {
+    if (f.kind === 'roles') continue; // stored in partner_roles, saved separately
     if (f.row) out.push(...f.row);
     else if (f.pair) out.push({ ...f, name: `${f.name}_pl` }, { ...f, name: `${f.name}_fr`, required: false });
     else out.push(f);
@@ -126,6 +140,7 @@ export const PAGES = {
   about: ['O nas / Qui sommes-nous', '/o-nas', ''],
   support: ['Pomóż Fundacji / Soutenir', '/pomoz-fundacji', ''],
   contact: ['Kontakt — tekst nad formularzem', '/kontakt', ''],
+  partners: ['Nasi Partnerzy / Nos partenaires — wstęp', '/partnerzy', 'Krótki tekst nad listą partnerów (opcjonalnie).'],
 };
 
 export const SETTINGS = {
@@ -151,4 +166,11 @@ export const DONATION_FIELDS = {
     { key: 'don_eur_iban', label: 'IBAN konta EUR', help: 'np. PL22 1600 …' },
     { key: 'don_title_eur', label: 'Tytuł przelewu w kodzie EUR', max: 140 },
   ],
+};
+
+export const PARTNER_CATEGORIES = {
+  honorary: 'Patronat honorowy',
+  patronage: 'Patronat',
+  partner: 'Partnerzy',
+  media: 'Partnerzy medialni',
 };

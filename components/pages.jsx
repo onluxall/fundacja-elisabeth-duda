@@ -250,21 +250,56 @@ export function Event({ lang, r }) {
   );
 }
 
-export async function Partners({ lang }) {
+const CATS = ['honorary', 'patronage', 'partner', 'media'];
+
+/** „Nasi Partnerzy”: four categories, logos link to the partner's site; buttons filter by project (ClientUI). */
+export async function Partners({ lang, r }) {
   const t = tFor(lang);
-  const ps = await C.getPartners();
+  const roles = await C.getPartnerRoles();
+  // Projects that have at least one visible partner, in panel order.
+  const projects = [...new Map(roles.filter((x) => x.projects).map((x) => [x.projects.id, x.projects])).values()]
+    .sort((a, b) => a.sort - b.sort || a.id - b.id);
+  // One card per partner per category; it lists every project in which the partner has that category.
+  const byCat = Object.fromEntries(CATS.map((c) => [c, new Map()]));
+  for (const x of roles) {
+    const m = byCat[x.category]; if (!m) continue;
+    const e = m.get(x.partners.id) || { p: x.partners, proj: new Set() };
+    e.proj.add(x.projects ? x.projects.slug : '_');
+    m.set(x.partners.id, e);
+  }
+  const sorted = (m) => [...m.values()].sort((a, b) => a.p.sort - b.p.sort || a.p.name.localeCompare(b.p.name, 'pl'));
+  const any = CATS.some((c) => byCat[c].size);
   return (
     <section className="wrap sec">
-      <EventsTabs active="partners" lang={lang} />
-      <h1 className="h-xl">{t('partners')}</h1>
-      {!ps.length ? <Empty lang={lang} /> : (
-        <div className="partners">
-          {ps.map((p, i) => {
-            const inner = <>{p.logo ? <img src={mediaUrl(p.logo)} alt={p.name} loading="lazy" /> : <span className="partner-name">{p.name}</span>}<div><h3>{p.name}</h3><Html html={md(tr(p, 'body', lang))} /></div></>;
-            return p.url ? <a key={p.id} className={`partner tilt-${i % 3}`} href={p.url} target="_blank" rel="noopener">{inner}</a> : <div key={p.id} className={`partner tilt-${i % 3}`}>{inner}</div>;
-          })}
-        </div>
-      )}
+      <h1 className="h-xl"><span className="underline-squiggle">{r.title}</span></h1>
+      <Prose src={tr(r.data, 'body', lang)} />
+      {!any ? <Empty lang={lang} /> : <>
+        {projects.length > 0 && (
+          <div className="pf" role="group" aria-label={t('partners_by_project')}>
+            <button type="button" className="pf-btn" data-proj="" aria-pressed="true">{t('all_projects')}</button>
+            {projects.map((pr) => <button key={pr.id} type="button" className="pf-btn" data-proj={pr.slug} aria-pressed="false">{tr(pr, 'name', lang) || pr.name_pl}</button>)}
+          </div>
+        )}
+        {CATS.filter((c) => byCat[c].size).map((c) => (
+          <section className="pcat" key={c}>
+            <h2 className="pcat-h">{t(`cat_${c}`)}</h2>
+            <ul className="plogos">
+              {sorted(byCat[c]).map(({ p, proj }) => {
+                const inner = <>
+                  <span className="plogo-box">{p.logo ? <img src={mediaUrl(p.logo)} alt={p.name} loading="lazy" /> : <span className="plogo-name">{p.name}</span>}</span>
+                  {p.logo && <span className="plogo-cap">{p.name}</span>}
+                </>;
+                return (
+                  <li key={p.id} data-projects={[...proj].join(' ')}>
+                    {p.url ? <a className="plogo" href={p.url} target="_blank" rel="noopener" title={p.name}>{inner}</a> : <div className="plogo">{inner}</div>}
+                  </li>
+                );
+              })}
+            </ul>
+          </section>
+        ))}
+        <p className="pf-empty muted" hidden>{t('no_partners_project')}</p>
+      </>}
     </section>
   );
 }

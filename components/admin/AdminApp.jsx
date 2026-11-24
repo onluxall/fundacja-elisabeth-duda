@@ -5,7 +5,7 @@ import { useRouter } from 'next/navigation';
 import qrcode from 'qrcode-generator';
 import { sb } from '@/lib/browser';
 import { mediaUrl, slugify, fmtDate, excerpt } from '@/lib/format';
-import { ENTITIES, flatFields, PAGES, SETTINGS, MD_HELP, DONATION_FIELDS } from './entities';
+import { ENTITIES, flatFields, PAGES, SETTINGS, MD_HELP, DONATION_FIELDS, PARTNER_CATEGORIES } from './entities';
 import { DON_DEFAULTS, donVal, donationCodes, qrSvg, plAccount, validIban, validBic, fmtIban, compact } from '@/lib/payqr';
 
 // On admin.fundacja-ed.com the panel sits at the root; elsewhere (previews, local) under /admin.
@@ -240,12 +240,48 @@ function QrPanel({ row, base, hits }) {
 
 /* ------------------------------------------------------------------ screens */
 
+/** Partner → [category, project] rows shown on the „Nasi Partnerzy” page. Stored in partner_roles. */
+function RolesEditor({ value, set, projects }) {
+  const rows = value || [];
+  const upd = (i, k, v) => set(rows.map((r, j) => (j === i ? { ...r, [k]: v } : r)));
+  const add = () => set([...rows, { project_id: projects[0]?.id ?? null, category: 'partner' }]);
+  return (
+    <div className="roles">
+      {!rows.length && <p className="muted small">Partner nie jest jeszcze przypisany — nie pojawi się na stronie „Nasi Partnerzy”.</p>}
+      {rows.map((r, i) => (
+        <div className="role-row" key={i}>
+          <select value={r.category} onChange={(e) => upd(i, 'category', e.target.value)} aria-label="Kategoria">
+            {Object.entries(PARTNER_CATEGORIES).map(([k, l]) => <option key={k} value={k}>{l}</option>)}
+          </select>
+          <span className="muted">przy</span>
+          <select value={r.project_id ?? ''} onChange={(e) => upd(i, 'project_id', e.target.value ? Number(e.target.value) : null)} aria-label="Projekt">
+            <option value="">— Fundacja (ogólnie, bez projektu) —</option>
+            {projects.map((p) => <option key={p.id} value={p.id}>{p.name_pl}{!p.published ? ' (ukryty)' : ''}</option>)}
+          </select>
+          <button type="button" className="btn btn-sm btn-ghost" onClick={() => set(rows.filter((_, j) => j !== i))} title="Usuń ten wiersz">✕</button>
+        </div>
+      ))}
+      <button type="button" className="btn btn-sm btn-ghost" onClick={add}>+ Dodaj kategorię / projekt</button>
+      <p className="help">Nowy projekt dodasz w menu <Link href={A('projects/new')}>Projekty</Link>.</p>
+    </div>
+  );
+}
+
+const roleKey = (r) => `${r.category}|${r.project_id ?? ''}`;
+
 function EntityList({ ent, toast }) {
   const def = ENTITIES[ent];
   const [rows, setRows] = useState(null);
   const [books, setBooks] = useState({});
   const [base, setBase] = useState('');
+  const [roles, setRoles] = useState({});
   useEffect(() => {
+    if (ent === 'partners') Promise.all([sb().from('partner_roles').select('partner_id,category,project_id'), sb().from('projects').select('id,name_pl')]).then(([r, p]) => {
+      const pn = Object.fromEntries((p.data || []).map((x) => [x.id, x.name_pl]));
+      const m = {};
+      for (const x of r.data || []) (m[x.partner_id] ||= []).push(`${PARTNER_CATEGORIES[x.category]}${x.project_id ? ` · ${pn[x.project_id] || ''}` : ' · Fundacja'}`);
+      setRoles(m);
+    });
     let qy = sb().from(ent).select('*');
     def.order.forEach(([c, asc]) => { qy = qy.order(c, { ascending: asc, nullsFirst: false }); });
     qy.then(({ data, error }) => { if (error) toast(error.message, 'err'); setRows(data || []); });
@@ -262,7 +298,8 @@ function EntityList({ ent, toast }) {
     if (k === 'starts_at' || k === 'date') return v ? fmtDate(v, 'pl') : '—';
     if (k === 'book_id') return books[v] || '—';
     if (k === 'scans') return <b>{v || 0}</b>;
-    if (['title_pl', 'name', 'code'].includes(k)) return <Link className="strong" href={A(`${ent}/${r.id}`)}>{v || r.title_fr || '(bez tytułu)'}</Link>;
+    if (k === 'roles') return roles[r.id]?.length ? <span className="small">{roles[r.id].join(', ')}</span> : <span className="no small">nieprzypisany</span>;
+    if (['title_pl', 'name', 'code', 'name_pl'].includes(k)) return <Link className="strong" href={A(`${ent}/${r.id}`)}>{v || r.title_fr || '(bez tytułu)'}</Link>;
     return v;
   };
   return (
@@ -297,13 +334,21 @@ function EntityForm({ ent, id, toast }) {
   const [saving, setSaving] = useState(false);
   const [qrBase, setQrBase] = useState('');
   const [hits, setHits] = useState([]);
+  const [roles, setRoles] = useState(null);
+  const [origRoles, setOrigRoles] = useState([]);
+  const [projects, setProjects] = useState([]);
   useDirtyGuard(dirty);
 
   useEffect(() => {
     if (!isNew) sb().from(ent).select('*').eq('id', id).maybeSingle().then(({ data }) => { if (!data) { toast('Nie znaleziono wpisu.', 'err'); router.push(A(ent)); } else setRow(data); });
     if (flatFields(def).some((f) => f.kind === 'partners')) sb().from('partners').select('id,name,published').order('sort').order('name').then(({ data }) => setPartners(data || []));
+    if (ent === 'partners') {
+      sb().from('projects').select('id,name_pl,published').order('sort').order('id').then(({ data }) => setProjects(data || []));
+      if (isNew) setRoles([]);
+      else sb().from('partner_roles').select('id,project_id,category').eq('partner_id', id).order('id').then(({ data }) => { setRoles(data || []); setOrigRoles(data || []); });
+    }
+    if (flatFields(def).some((f) => f.kind === 'book')) sb().from('books').select('id,title_pl').order('sort').then(({ data }) => setBooks(data || []));
     if (ent === 'qr') {
-      sb().from('books').select('id,title_pl').order('sort').then(({ data }) => setBooks(data || []));
       sb().from('settings').select('value').eq('key', 'qr_base').maybeSingle().then(({ data }) => setQrBase(data?.value || PUB('')));
     }
   }, [ent, id]); // eslint-disable-line react-hooks/exhaustive-deps
@@ -346,6 +391,17 @@ function EntityForm({ ent, id, toast }) {
     const res = isNew ? await sb().from(ent).insert(data).select().single() : await sb().from(ent).update(data).eq('id', row.id).select().single();
     setSaving(false);
     if (res.error) return toast(res.error.message, 'err');
+    if (ent === 'partners' && roles) {
+      // Keep one row per category+project; only touch rows that actually changed.
+      const want = [...new Map(roles.map((r) => [roleKey(r), r])).values()];
+      const wantKeys = new Set(want.map(roleKey)), haveKeys = new Set(origRoles.map(roleKey));
+      const gone = origRoles.filter((r) => !wantKeys.has(roleKey(r))).map((r) => r.id);
+      const added = want.filter((r) => !haveKeys.has(roleKey(r))).map((r) => ({ partner_id: res.data.id, project_id: r.project_id ?? null, category: r.category }));
+      if (gone.length) { const { error } = await sb().from('partner_roles').delete().in('id', gone); if (error) return toast(error.message, 'err'); }
+      if (added.length) { const { error } = await sb().from('partner_roles').insert(added); if (error) return toast(error.message, 'err'); }
+      const { data: fresh } = await sb().from('partner_roles').select('id,project_id,category').eq('partner_id', res.data.id).order('id');
+      setRoles(fresh || []); setOrigRoles(fresh || []);
+    }
     setDirty(false); setRow(res.data);
     toast('Zapisano ✔');
     refreshSite();
@@ -359,6 +415,12 @@ function EntityForm({ ent, id, toast }) {
   };
 
   const render = (f, i) => {
+    if (f.kind === 'roles') return (
+      <div className="fld" key={i}><label>{f.label}</label>
+        {roles ? <RolesEditor value={roles} set={(v) => { setRoles(v); setDirty(true); }} projects={projects} /> : <p className="muted small">Wczytywanie…</p>}
+        {f.help && <p className="help">{f.help}</p>}
+      </div>
+    );
     if (f.row) return <div className="row" key={i}>{f.row.map((c) => <Field key={c.name} f={c} value={row[c.name]} set={set(c.name)} books={books} partners={partners} onPartnerCreated={(p) => setPartners((l) => [...l, p])} err={(m) => toast(m, 'err')} />)}</div>;
     if (f.pair) return (
       <div className="pair" key={i}>
@@ -369,7 +431,7 @@ function EntityForm({ ent, id, toast }) {
     );
     return <Field key={i} f={f} value={row[f.name]} set={set(f.name)} books={books} partners={partners} onPartnerCreated={(p) => setPartners((l) => [...l, p])} err={(m) => toast(m, 'err')} />;
   };
-  const title = isNew ? `Nowy: ${def.one}` : (row.title_pl || row.name || row.code || 'Edycja');
+  const title = isNew ? `Nowy: ${def.one}` : (row.title_pl || row.name || row.name_pl || row.code || 'Edycja');
   return (
     <>
       <header className="ph ph-row"><div><p className="crumb"><Link href={A(ent)}>← {def.label}</Link></p><h1>{title}</h1></div>
