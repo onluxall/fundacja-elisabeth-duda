@@ -350,6 +350,21 @@ a.pasteup:hover { transform: rotate(0deg) scale(1.02); }
 .bank-rows dd { margin: 0; display: flex; flex-wrap: wrap; align-items: center; gap: 8px; }
 .copy { font: 600 .72rem/1 var(--f-ui); letter-spacing: .08em; text-transform: uppercase; background: var(--ink); color: #fff; border: 0; padding: 6px 9px; cursor: pointer; }
 .copy.is-done { background: #2f9e6e; }
+.bank-acc { margin-top: 26px; padding-top: 20px; border-top: 2px dashed rgba(21,22,28,.25); }
+.bank-cur { display: flex; align-items: center; gap: 10px; font: 600 .95rem/1.2 var(--f-ui); margin: 0 0 12px; }
+.bank-cur span { background: var(--red); color: #fff; font: 400 1.1rem/1 var(--f-display); letter-spacing: .08em; padding: 6px 8px 4px; transform: rotate(-3deg); }
+.bank-acc-grid { display: grid; grid-template-columns: 1fr auto; gap: 18px; align-items: start; }
+.bank-acc-grid .bank-rows { margin-top: 0; }
+.bank-qr { margin: 0; width: 132px; text-align: center; }
+.bank-qr-code { background: #fff; border: 2px solid var(--ink); padding: 4px; box-shadow: 3px 3px 0 var(--red); }
+.bank-qr-code svg { display: block; width: 100%; height: auto; }
+.bank-qr figcaption { font: 600 .66rem/1.25 var(--f-ui); letter-spacing: .04em; text-transform: uppercase; margin-top: 8px; color: var(--muted); }
+.mono { word-break: break-word; }
+.qr-how { margin-top: 34px; padding: 22px 24px; background: var(--paper); box-shadow: var(--shadow); }
+.qr-how ol { margin: 10px 0; padding-left: 1.3em; display: grid; gap: 6px; }
+.qr-how li::marker { color: var(--red); font-weight: 700; }
+.qr-how p { margin: 0; font-size: .95rem; }
+@media (max-width: 560px) { .bank-acc-grid { grid-template-columns: 1fr; } .bank-qr { width: 150px; } }
 .contact-list { list-style: none; padding: 0; margin: 24px 0; display: grid; gap: 10px; font-size: 1.15rem; }
 .contact-list span { display: inline-grid; place-items: center; width: 34px; height: 34px; background: var(--red); color: #fff; margin-right: 10px; font-family: var(--f-ui); }
 .form { padding: 30px 26px; transform: rotate(-1deg); display: grid; gap: 16px; }

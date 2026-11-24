@@ -5,7 +5,8 @@ import { useRouter } from 'next/navigation';
 import qrcode from 'qrcode-generator';
 import { sb } from '@/lib/browser';
 import { mediaUrl, slugify, fmtDate, excerpt } from '@/lib/format';
-import { ENTITIES, flatFields, PAGES, SETTINGS, MD_HELP } from './entities';
+import { ENTITIES, flatFields, PAGES, SETTINGS, MD_HELP, DONATION_FIELDS } from './entities';
+import { DON_DEFAULTS, donVal, donationCodes, qrSvg, plAccount, validIban, validBic, fmtIban, compact } from '@/lib/payqr';
 
 // On admin.fundacja-ed.com the panel sits at the root; elsewhere (previews, local) under /admin.
 // Only evaluated client-side after the session check, so server and client markup never differ.
@@ -468,6 +469,119 @@ function SettingsScreen({ toast }) {
   );
 }
 
+/* ------------------------------------------------------------------ donations (bank QR codes) */
+
+const PRINT_TXT = {
+  pl: { scan: 'Zeskanuj w aplikacji banku', pln: 'Konto PLN', eur: 'Konto EUR' },
+  fr: { scan: 'Scannez dans votre application bancaire', pln: 'Compte en PLN', eur: 'Compte en EUR' },
+};
+
+function DonationQr({ kind, code, s, lang }) {
+  const T = PRINT_TXT[lang];
+  const caption = code ? [
+    { text: T.scan, size: 1.1, bold: true },
+    { text: `${T[kind]}: ${code.account}`, size: 0.82 },
+    ...(kind === 'eur' && validBic(s.don_bic) ? [{ text: `SWIFT/BIC: ${compact(s.don_bic)}`, size: 0.82 }] : []),
+  ] : [];
+  const preview = useMemo(() => (code ? qrSvg(code.payload) : ''), [code]);
+  const print = useMemo(() => (code ? qrSvg(code.payload, { caption }) : ''), [code, lang, s.don_bic]); // eslint-disable-line
+  const file = `darowizna-${kind}-${lang}`;
+  const dl = (href, ext) => { const a = document.createElement('a'); a.href = href; a.download = `${file}.${ext}`; document.body.appendChild(a); a.click(); a.remove(); };
+  const png = () => {
+    const img = new Image();
+    img.onload = () => {
+      const px = 1600, k = px / img.width, cv = document.createElement('canvas');
+      cv.width = px; cv.height = Math.round(img.height * k);
+      const ctx = cv.getContext('2d'); ctx.imageSmoothingEnabled = false; ctx.drawImage(img, 0, 0, cv.width, cv.height);
+      dl(cv.toDataURL('image/png'), 'png');
+    };
+    img.src = 'data:image/svg+xml;charset=utf-8,' + encodeURIComponent(print.replace('<svg ', `<svg width="400" height="${Math.round(400 * (Number(print.match(/viewBox="0 0 [\d.]+ ([\d.]+)"/)[1]) / Number(print.match(/viewBox="0 0 ([\d.]+)/)[1])))}" `));
+  };
+  return (
+    <section className="card don-qr">
+      <h2>{kind === 'pln' ? 'Kod QR — konto PLN' : 'Kod QR — konto EUR'}</h2>
+      {code ? <>
+        <div className="qr-box" dangerouslySetInnerHTML={{ __html: preview }} />
+        <p className="qr-url">{code.account}</p>
+        <div className="btns">
+          <button type="button" className="btn btn-sm" onClick={() => dl(URL.createObjectURL(new Blob([print], { type: 'image/svg+xml' })), 'svg')}>⬇ SVG (do druku)</button>
+          <button type="button" className="btn btn-sm btn-ghost" onClick={png}>⬇ PNG</button>
+        </div>
+        <p className="help">Plik do druku ma pod kodem podpis „{T.scan}” i numer konta. {kind === 'pln' ? 'Działa w aplikacjach polskich banków (opcja „Skanuj kod QR”).' : 'Standard SEPA (EPC) — działa w wielu aplikacjach banków w UE; we Francji zależy od banku.'}</p>
+      </> : <p className="muted">Wpisz poprawny numer konta {kind === 'pln' ? 'PLN' : 'EUR'} — kod pojawi się tutaj.</p>}
+    </section>
+  );
+}
+
+function DonationsScreen({ toast }) {
+  const [s, setS] = useState(null);
+  const [dirty, setDirty] = useState(false);
+  const [lang, setLang] = useState('pl');
+  useDirtyGuard(dirty);
+  const keys = Object.values(DONATION_FIELDS).flat().map((f) => f.key);
+  useEffect(() => { sb().from('settings').select('key,value').then(({ data }) => {
+    const all = Object.fromEntries((data || []).map((r) => [r.key, r.value]));
+    setS({ ...Object.fromEntries(keys.map((k) => [k, all[k] || DON_DEFAULTS[k] || ''])), don_qr_site: all.don_qr_site ?? '1' });
+  }); }, []); // eslint-disable-line
+  const codes = useMemo(() => (s ? donationCodes(s) : {}), [s]);
+  if (!s) return <p className="muted">Wczytywanie…</p>;
+  const set = (k) => (v) => { setS({ ...s, [k]: v }); setDirty(true); };
+  const problem = (k) => {
+    const v = String(s[k] || '').trim();
+    if (!v) return null;
+    if (k === 'bank_account' && !plAccount(v)) return 'Niepoprawny numer konta (suma kontrolna się nie zgadza).';
+    if (k === 'don_eur_iban' && !validIban(v)) return 'Niepoprawny IBAN (suma kontrolna się nie zgadza).';
+    if (k === 'don_bic' && !validBic(v)) return 'BIC ma 8 lub 11 znaków, np. PPABPLPK.';
+    return null;
+  };
+  const save = async (e) => {
+    e.preventDefault();
+    const bad = keys.map(problem).find(Boolean);
+    if (bad) return toast(bad, 'err');
+    const norm = (k, v) => (k === 'bank_account' || k === 'don_eur_iban' ? fmtIban(k === 'bank_account' ? plAccount(v) : v) : k === 'don_bic' ? compact(v) : v.trim());
+    const rows = [...keys.map((k) => ({ key: k, value: s[k] ? norm(k, String(s[k])) : '' })), { key: 'don_qr_site', value: s.don_qr_site === '0' ? '0' : '1' }];
+    const { error } = await sb().from('settings').upsert(rows);
+    if (error) return toast(error.message, 'err');
+    setS(Object.fromEntries(rows.map((r) => [r.key, r.value])));
+    setDirty(false); toast('Zapisano ✔'); refreshSite();
+  };
+  return (
+    <>
+      <header className="ph ph-row"><div><h1>💝 Darowizny</h1><p className="muted">Dane do przelewu i kody QR do wpłat w aplikacji banku. Kody tworzą się same z numerów kont.</p></div>
+        <a className="btn btn-ghost" href={PUB('/pomoz-fundacji')} target="_blank" rel="noreferrer">Zobacz na stronie ↗</a></header>
+      <form className="form" onSubmit={save}>
+        <div className="form-grid">
+          <div className="form-main">
+            {Object.entries(DONATION_FIELDS).map(([g, fields]) => (
+              <fieldset className="card" key={g}><legend>{g}</legend><div className="row row-2">
+                {fields.map((f) => { const p = problem(f.key); const len = String(s[f.key] || '').length; return (
+                  <div className="fld" key={f.key}><label htmlFor={`d_${f.key}`}>{f.label}</label>
+                    <input id={`d_${f.key}`} type="text" value={s[f.key] || ''} maxLength={f.max} onChange={(e) => set(f.key)(e.target.value)} placeholder={DON_DEFAULTS[f.key] || ''} />
+                    {p ? <p className="help err-txt">{p}</p> : f.help && <p className="help">{f.help}{f.max ? ` (${len}/${f.max})` : ''}</p>}
+                    {!p && !f.help && f.max && <p className="help">{len}/{f.max}</p>}
+                  </div>); })}
+              </div></fieldset>
+            ))}
+            <fieldset className="card"><legend>Strona internetowa</legend>
+              <label className="check small"><input type="checkbox" checked={s.don_qr_site !== '0'} onChange={(e) => set('don_qr_site')(e.target.checked ? '1' : '0')} /> Pokazuj kody QR na stronie „Pomóż Fundacji” (numery kont są widoczne zawsze)</label>
+            </fieldset>
+          </div>
+          <aside className="qr-side">
+            <div className="btns don-lang"><span className="help">Podpis na plikach do druku:</span>
+              <button type="button" className={`btn btn-sm${lang === 'pl' ? '' : ' btn-ghost'}`} onClick={() => setLang('pl')}>PL</button>
+              <button type="button" className={`btn btn-sm${lang === 'fr' ? '' : ' btn-ghost'}`} onClick={() => setLang('fr')}>FR</button>
+            </div>
+            <DonationQr kind="pln" code={codes.pln} s={s} lang={lang} />
+            <DonationQr kind="eur" code={codes.eur} s={s} lang={lang} />
+            <p className="help">Przed drukiem zeskanuj kod telefonem w aplikacji banku. Minimalny rozmiar w druku: ok. 2,5 × 2,5 cm.</p>
+          </aside>
+        </div>
+        <div className="savebar"><button className="btn btn-red">💾 Zapisz</button></div>
+      </form>
+    </>
+  );
+}
+
 function MessagesScreen({ mid, toast, onRead }) {
   const router = useRouter();
   const [list, setList] = useState(null);
@@ -552,14 +666,16 @@ function Dashboard({ name }) {
         sb().from('settings').select('key,value'),
       ]);
       const s = Object.fromEntries((settings.data || []).map((r) => [r.key, r.value]));
-      const missing = [['email', 'e-mail kontaktowy'], ['krs', 'numer KRS'], ['bank_account', 'numer konta'], ['linkedin', 'link do LinkedIn']].filter(([k]) => !s[k]).map(([, l]) => l);
-      setD({ books, events, news, qr, msgs: msgs.data || [], top: top.data || [], week: (hits.data || []).reduce((a, h) => a + h.n, 0), missing });
+      const missing = [['email', 'e-mail kontaktowy'], ['krs', 'numer KRS'], ['linkedin', 'link do LinkedIn']].filter(([k]) => !s[k]).map(([, l]) => l);
+      const noBank = !s.bank_account && !s.don_eur_iban;
+      setD({ noBank, books, events, news, qr, msgs: msgs.data || [], top: top.data || [], week: (hits.data || []).reduce((a, h) => a + h.n, 0), missing });
     })();
   }, []);
   return (
     <>
       <header className="ph"><h1>Dzień dobry{name ? `, ${name}` : ''}!</h1><p className="muted">Co chcesz dziś zrobić?</p></header>
       {d?.missing.length > 0 && <div className="callout">⚠️ Uzupełnij w <Link href={A('settings')}>Danych Fundacji</Link>: <b>{d.missing.join(', ')}</b>. Bez nich te elementy są ukryte na stronie.</div>}
+      {d?.noBank && <div className="callout">⚠️ Uzupełnij numery kont w sekcji <Link href={A('darowizny')}>Darowizny</Link> — wtedy na stronie pojawią się dane do przelewu i kody QR.</div>}
       <div className="quick">
         <Link href={A('news/new')}><span>📰</span>Dodaj aktualność</Link>
         <Link href={A('events/new')}><span>🎭</span>Dodaj wydarzenie</Link>
@@ -740,6 +856,7 @@ export default function AdminApp({ path }) {
   else if (ENTITIES[a]) screen = b ? <EntityForm key={`${a}/${b}`} ent={a} id={b} toast={toast} /> : <EntityList key={a} ent={a} toast={toast} />;
   else if (a === 'pages') screen = <PagesScreen key={b || 'all'} pkey={b} toast={toast} />;
   else if (a === 'settings') screen = <SettingsScreen toast={toast} />;
+  else if (a === 'darowizny') screen = <DonationsScreen toast={toast} />;
   else if (a === 'messages') screen = <MessagesScreen key={b || 'all'} mid={b} toast={toast} onRead={() => setUnread((u) => Math.max(0, u - 1))} />;
   else if (a === 'users') screen = <UsersScreen me={session.user.id} toast={toast} />;
   else if (a === 'help') screen = <Help />;
@@ -758,6 +875,7 @@ export default function AdminApp({ path }) {
           {nav('pages', '📄', 'Strony stałe')}
           {nav('messages', '✉️', 'Wiadomości', unread ? <b className="pill">{unread}</b> : null)}
           <p className="side-h">Ustawienia</p>
+          {nav('darowizny', '💝', 'Darowizny')}
           {nav('settings', '⚙️', 'Dane Fundacji')}
           {nav('users', '👤', 'Konta i hasło')}
           {nav('help', '❓', 'Pomoc')}

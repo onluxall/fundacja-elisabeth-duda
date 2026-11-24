@@ -131,7 +131,24 @@ export const PAGES = {
 export const SETTINGS = {
   Fundacja: { site_name: 'Nazwa', tagline: 'Hasło (pod logo)', email: 'E-mail kontaktowy (widoczny na stronie)', phone: 'Telefon', address: 'Adres' },
   'Dane rejestrowe': { krs: 'KRS', nip: 'NIP', regon: 'REGON' },
-  Darowizny: { bank_name: 'Nazwa banku', bank_account: 'Numer konta (PL)', iban_swift: 'IBAN / SWIFT (przelewy z zagranicy)' },
   'Media społecznościowe': { facebook: 'Facebook', linkedin: 'LinkedIn', instagram: 'Instagram', youtube: 'YouTube' },
   'SEO i kody QR': { seo_desc_pl: 'Opis strony dla Google — PL', seo_desc_fr: 'Opis strony dla Google — FR', qr_base: 'Adres strony w kodach QR' },
+};
+
+// Screen „Darowizny” — bank accounts + QR codes for donations (stored in the settings table).
+export const DONATION_FIELDS = {
+  'Odbiorca': [
+    { key: 'don_recipient', label: 'Nazwa odbiorcy (tak jak w banku)', help: 'Trafia do kodu EUR i na stronę.' },
+    { key: 'don_qr_name', label: 'Nazwa w kodzie PLN (maks. 20 znaków)', max: 20, help: 'Polski standard kodów QR mieści tylko 20 znaków, np. „Fundacja E. Duda”.' },
+    { key: 'bank_name', label: 'Nazwa banku', help: 'np. BNP Paribas' },
+    { key: 'don_bic', label: 'SWIFT / BIC', help: 'Wspólny dla obu kont, np. PPABPLPK.' },
+  ],
+  'Konto PLN': [
+    { key: 'bank_account', label: 'Numer konta PLN', help: '26 cyfr, może być z „PL” i spacjami.' },
+    { key: 'don_title_pln', label: 'Tytuł przelewu w kodzie PLN (maks. 32 znaki)', max: 32 },
+  ],
+  'Konto EUR': [
+    { key: 'don_eur_iban', label: 'IBAN konta EUR', help: 'np. PL22 1600 …' },
+    { key: 'don_title_eur', label: 'Tytuł przelewu w kodzie EUR', max: 140 },
+  ],
 };

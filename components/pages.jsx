@@ -2,6 +2,7 @@ import { url, tFor } from '@/lib/i18n';
 import { tr, md, mediaUrl, excerpt, fmtDate, mediaInfo } from '@/lib/format';
 import { SITE_URL } from '@/lib/config';
 import * as C from '@/lib/content';
+import { donationCodes, donVal, qrSvg, validBic, compact } from '@/lib/payqr';
 import { Html, Prose, BookCover, BookCard, EventCard, NewsCard, Empty, SectionHead, EventsTabs, Pasteup, JsonLd } from './blocks';
 import { Socials } from './SiteShell';
 import ContactForm from './ContactForm';
@@ -300,12 +301,35 @@ export function NewsItem({ lang, r }) {
 export async function Support({ lang, r }) {
   const t = tFor(lang);
   const s = await C.getSettings();
-  const rows = [];
-  if (s.bank_name) rows.push([t('bank'), s.bank_name, false]);
-  if (s.bank_account) rows.push([t('account'), s.bank_account, true]);
-  if (s.iban_swift) rows.push(['IBAN / SWIFT', s.iban_swift, true]);
-  rows.push([t('title_transfer'), t('transfer_title'), true]);
-  if (s.krs) rows.push([t('krs'), s.krs, true]);
+  const codes = donationCodes(s);
+  const showQr = s.don_qr_site !== '0';
+  const bic = validBic(s.don_bic) ? compact(s.don_bic) : '';
+  const recipient = donVal(s, 'don_recipient') || s.site_name;
+  const title = t('transfer_title');
+  // Legacy single-account fields keep working until the new ones are filled in.
+  const plnAcc = codes.pln?.account || (!codes.pln && s.bank_account) || '';
+  const eurAcc = codes.eur?.account || (!codes.eur && s.iban_swift) || '';
+  const Rows = ({ rows }) => (
+    <dl className="bank-rows">
+      {rows.filter(([, v]) => v).map(([k, v, copy]) => (
+        <div key={k}><dt>{k}</dt><dd><span className="mono">{v}</span>{copy && <> <button type="button" className="copy" data-copy={copy === true ? v : copy} data-done={t('copied')}>{t('copy')}</button></>}</dd></div>
+      ))}
+    </dl>
+  );
+  const Account = ({ cur, acc, code }) => (
+    <div className="bank-acc">
+      <h3 className="bank-cur"><span>{cur}</span>{t(cur === 'PLN' ? 'acc_pln' : 'acc_eur')}</h3>
+      <div className="bank-acc-grid">
+        <Rows rows={[[cur === 'PLN' ? t('account') : 'IBAN', acc, cur === 'PLN' ? compact(acc).replace(/^PL/, '') : compact(acc)], ['SWIFT / BIC', bic, true]]} />
+        {showQr && code && (
+          <figure className="bank-qr">
+            <div className="bank-qr-code" role="img" aria-label={`${t('scan_bank')} — ${cur}`} dangerouslySetInnerHTML={{ __html: qrSvg(code.payload) }} />
+            <figcaption>{t('scan_bank')}</figcaption>
+          </figure>
+        )}
+      </div>
+    </div>
+  );
   return (
     <section className="wrap sec">
       <JsonLd graph={[orgSchema(s, lang)]} />
@@ -314,16 +338,24 @@ export async function Support({ lang, r }) {
           <h1 className="h-xl"><span className="underline-squiggle">{r.title}</span></h1>
           <Prose src={tr(r.data, 'body', lang)} />
         </div>
+        <div>
         <div className="bank-card pasteup">
           <span className="tape tape-a"></span>
           <h2 className="h-md">{t('bank')}</h2>
-          <p className="bank-name">{s.site_name}</p>
+          <p className="bank-name">{recipient}</p>
           {s.address && <p className="muted">{s.address}</p>}
-          <dl className="bank-rows">
-            {rows.map(([k, v, copy]) => (
-              <div key={k}><dt>{k}</dt><dd><span className="mono">{v}</span>{copy && <> <button type="button" className="copy" data-copy={v} data-done={t('copied')}>{t('copy')}</button></>}</dd></div>
-            ))}
-          </dl>
+          <Rows rows={[[t('bank_label'), s.bank_name, false], [t('title_transfer'), title, true]]} />
+          {plnAcc && <Account cur="PLN" acc={plnAcc} code={codes.pln} />}
+          {eurAcc && <Account cur="EUR" acc={eurAcc} code={codes.eur} />}
+          {s.krs && <Rows rows={[[t('krs'), s.krs, true]]} />}
+        </div>
+          {showQr && (codes.pln || codes.eur) && (
+            <div className="qr-how">
+              <h2 className="h-md">{t('qr_how_h')}</h2>
+              <ol><li>{t('qr_how_1')}</li><li>{t('qr_how_2')}</li><li>{t('qr_how_3')}</li></ol>
+              <p className="muted">{t('qr_how_note')}</p>
+            </div>
+          )}
         </div>
       </div>
     </section>
