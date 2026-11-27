@@ -164,7 +164,7 @@ export const DONATION_FIELDS = {
   ],
   'Konto EUR': [
     { key: 'don_eur_iban', label: 'IBAN konta EUR', help: 'np. PL22 1600 …' },
-    { key: 'don_title_eur', label: 'Tytuł przelewu w kodzie EUR', max: 140 },
+    { key: 'don_title_eur', label: 'Tytuł przelewu EUR (zapasowy)', max: 140, help: 'Obecnie nieużywany — kod EUR prowadzi do strony z IBAN-em.' },
   ],
 };
 

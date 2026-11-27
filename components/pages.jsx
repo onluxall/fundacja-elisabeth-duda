@@ -2,7 +2,7 @@ import { url, tFor } from '@/lib/i18n';
 import { tr, md, mediaUrl, excerpt, fmtDate, mediaInfo } from '@/lib/format';
 import { SITE_URL } from '@/lib/config';
 import * as C from '@/lib/content';
-import { donationCodes, donVal, qrSvg, validBic, compact } from '@/lib/payqr';
+import { donationCodes, donVal, qrSvg, validBic, compact, EUR_ANCHOR } from '@/lib/payqr';
 import { Html, Prose, BookCover, BookCard, EventCard, NewsCard, Empty, SectionHead, EventsTabs, Pasteup, JsonLd } from './blocks';
 import { Socials } from './SiteShell';
 import ContactForm from './ContactForm';
@@ -352,14 +352,14 @@ export async function Support({ lang, r }) {
     </dl>
   );
   const Account = ({ cur, acc, code }) => (
-    <div className="bank-acc">
+    <div className="bank-acc" id={cur === 'EUR' ? EUR_ANCHOR : undefined}>
       <h3 className="bank-cur"><span>{cur}</span>{t(cur === 'PLN' ? 'acc_pln' : 'acc_eur')}</h3>
       <div className="bank-acc-grid">
         <Rows rows={[[cur === 'PLN' ? t('account') : 'IBAN', acc, cur === 'PLN' ? compact(acc).replace(/^PL/, '') : compact(acc)], ['SWIFT / BIC', bic, true]]} />
         {showQr && code && (
           <figure className="bank-qr">
-            <div className="bank-qr-code" role="img" aria-label={`${t('scan_bank')} — ${cur}`} dangerouslySetInnerHTML={{ __html: qrSvg(code.payload) }} />
-            <figcaption>{t('scan_bank')}</figcaption>
+            <div className="bank-qr-code" role="img" aria-label={`${t(cur === 'EUR' ? 'scan_link' : 'scan_bank')} — ${cur}`} dangerouslySetInnerHTML={{ __html: qrSvg(code.payload) }} />
+            <figcaption>{t(cur === 'EUR' ? 'scan_link' : 'scan_bank')}</figcaption>
           </figure>
         )}
       </div>

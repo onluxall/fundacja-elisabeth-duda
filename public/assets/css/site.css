@@ -621,3 +621,4 @@ h3 { font-size: 1.5rem; }
 }
 .lang-switch a { text-decoration: none; }
 @media (min-width: 961px) { .menu .has-sub > a { white-space: nowrap; } }
+.bank-acc { scroll-margin-top: 110px; }

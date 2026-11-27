@@ -534,14 +534,14 @@ function SettingsScreen({ toast }) {
 /* ------------------------------------------------------------------ donations (bank QR codes) */
 
 const PRINT_TXT = {
-  pl: { scan: 'Zeskanuj w aplikacji banku', pln: 'Konto PLN', eur: 'Konto EUR' },
-  fr: { scan: 'Scannez dans votre application bancaire', pln: 'Compte en PLN', eur: 'Compte en EUR' },
+  pl: { scan: 'Zeskanuj w aplikacji banku', link: 'Zeskanuj aparatem telefonu', pln: 'Konto PLN', eur: 'Konto EUR' },
+  fr: { scan: 'Scannez dans votre application bancaire', link: 'Scannez avec l’appareil photo', pln: 'Compte en PLN', eur: 'Compte en EUR' },
 };
 
 function DonationQr({ kind, code, s, lang }) {
   const T = PRINT_TXT[lang];
   const caption = code ? [
-    { text: T.scan, size: 1.1, bold: true },
+    { text: kind === 'eur' ? T.link : T.scan, size: 1.1, bold: true },
     { text: `${T[kind]}: ${code.account}`, size: 0.82 },
     ...(kind === 'eur' && validBic(s.don_bic) ? [{ text: `SWIFT/BIC: ${compact(s.don_bic)}`, size: 0.82 }] : []),
   ] : [];
@@ -569,7 +569,7 @@ function DonationQr({ kind, code, s, lang }) {
           <button type="button" className="btn btn-sm" onClick={() => dl(URL.createObjectURL(new Blob([print], { type: 'image/svg+xml' })), 'svg')}>⬇ SVG (do druku)</button>
           <button type="button" className="btn btn-sm btn-ghost" onClick={png}>⬇ PNG</button>
         </div>
-        <p className="help">Plik do druku ma pod kodem podpis „{T.scan}” i numer konta. {kind === 'pln' ? 'Działa w aplikacjach polskich banków (opcja „Skanuj kod QR”).' : 'Standard SEPA (EPC) — działa w wielu aplikacjach banków w UE; we Francji zależy od banku.'}</p>
+        <p className="help">Plik do druku ma pod kodem podpis „{kind === 'eur' ? T.link : T.scan}” i numer konta. {kind === 'pln' ? 'Działa w aplikacjach polskich banków (opcja „Skanuj kod QR”).' : 'Otwiera francuską stronę „Soutenir la Fondation” przy koncie EUR (IBAN z przyciskiem „Copier”). Działa w każdym telefonie — francuskie aplikacje bankowe nie czytają kodów SEPA.'}</p>
       </> : <p className="muted">Wpisz poprawny numer konta {kind === 'pln' ? 'PLN' : 'EUR'} — kod pojawi się tutaj.</p>}
     </section>
   );
